@@ -54,6 +54,9 @@ export default function LoginScreen({ navigation }) {
         secureTextEntry
       />
       <Text style={styles.label}>Select Language:</Text>
+      
+      <Button title="Login" onPress={handleLogin} />
+     
       <Picker
         selectedValue={selectedLanguage}
         style={styles.picker}
@@ -63,9 +66,13 @@ export default function LoginScreen({ navigation }) {
         <Picker.Item label="Spanish" value="es" />
         {/* Add additional languages as needed */}
       </Picker>
-      <Button title="Login" onPress={handleLogin} />
+      
       <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
         <Text style={styles.link}>Don't have an account? Sign Up</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+        <Text style={styles.link}>Forgot your Password?</Text>
       </TouchableOpacity>
     </View>
   );
