@@ -14,6 +14,7 @@ import FoundPostsListScreen from '../screens/FoundPostsListScreen';
 import PostDetailScreen from '../screens/PostDetailScreen';
 import RequestsScreen from '../screens/RequestsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import PickLocationScreen from '../screens/PickLocationScreen';
 
 import { AuthContext } from '../contexts/AuthContext';
 
@@ -42,6 +43,11 @@ function AppStackScreen() {
         name="CreatePost" 
         component={CreatePostScreen} 
         options={{ title: 'Create Found Post' }} 
+      />
+      <AppStack.Screen
+        name="PickLocation"
+        component={PickLocationScreen}
+        options={{ title: 'Pick Location' }}
       />
       <AppStack.Screen 
         name="FoundPosts" 
