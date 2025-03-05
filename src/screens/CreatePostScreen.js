@@ -29,8 +29,7 @@ export default function CreatePostScreen({ navigation, route }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
-  const [photos, setPhotos] = useState([]); // Array of image URIs initially
-  const [uploadedPhotoURLs, setUploadedPhotoURLs] = useState([]); // URLs from Firebase after upload
+  const [photos, setPhotos] = useState([]); // Array of image URIs
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -39,10 +38,18 @@ export default function CreatePostScreen({ navigation, route }) {
   const [locLoading, setLocLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
-  // On mount: if a location was picked on the map, use it; otherwise get current location.
+  // On mount: if location & formState were picked from PickLocationScreen, restore them
   useEffect(() => {
     if (route.params?.pickedLocation) {
       setLocation(route.params.pickedLocation);
+      // Restore form data if provided
+      if (route.params.formState) {
+        setName(route.params.formState.name);
+        setCategory(route.params.formState.category);
+        setDescription(route.params.formState.description);
+        setAdditionalInfo(route.params.formState.additionalInfo);
+        setPhotos(route.params.formState.photos);
+      }
       setLocLoading(false);
     } else {
       (async () => {
@@ -72,19 +79,18 @@ export default function CreatePostScreen({ navigation, route }) {
       return;
     }
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], // or use an array: ['images', 'videos'] if you want
+      mediaTypes: ['images'], // Updated per Expo docs
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
-      // Not requesting base64 now, since we will use the URI
     });
     console.log('ImagePicker result:', result);
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      // Use the URI from the first asset
       setPhotos([...photos, result.assets[0].uri]);
     }
   };
-  
+
+  // Function to take a photo with the camera
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -95,7 +101,6 @@ export default function CreatePostScreen({ navigation, route }) {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
-      // Not requesting base64 now, since we will use the URI
     });
     console.log('Camera result:', result);
     if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -127,9 +132,8 @@ export default function CreatePostScreen({ navigation, route }) {
       setUploading(false);
     }
   };
-  
 
-  // Function to upload all images and return an array of download URLs
+  // Upload all selected images and return an array of download URLs
   const uploadAllImages = async () => {
     const urls = [];
     for (const uri of photos) {
@@ -141,7 +145,7 @@ export default function CreatePostScreen({ navigation, route }) {
     return urls;
   };
 
-  // Handle post creation: upload images first, then create post document in Firestore
+  // Handle post creation: upload images first, then create the post document in Firestore
   const handleCreatePost = async () => {
     if (!name || !category || !description || !location) {
       Alert.alert('Error', 'Please fill in all required fields and ensure location is available.');
@@ -150,7 +154,7 @@ export default function CreatePostScreen({ navigation, route }) {
     try {
       // First, upload all selected images
       const uploadedURLs = await uploadAllImages();
-      // Now create post document using the download URLs
+      // Create the post document with the download URLs
       const lat = location.latitude;
       const lng = location.longitude;
       const geohash = getGeohash(lat, lng);
@@ -206,8 +210,15 @@ export default function CreatePostScreen({ navigation, route }) {
       
       <TextInput placeholder="Additional Info" value={additionalInfo} onChangeText={setAdditionalInfo} style={styles.input} />
 
-      {/* Mini Map Preview */}
-      <TouchableOpacity onPress={() => navigation.navigate('PickLocation', { currentLocation: location })}>
+      {/* Mini Map Preview: Tapping navigates to PickLocationScreen, passing current location and form state */}
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate('PickLocation', {
+            currentLocation: location,
+            formState: { name, category, description, additionalInfo, photos },
+          })
+        }
+      >
         <View style={styles.mapPreview}>
           <MapView
             style={styles.map}

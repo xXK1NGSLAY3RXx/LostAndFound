@@ -15,6 +15,7 @@ import PostDetailScreen from '../screens/PostDetailScreen';
 import RequestsScreen from '../screens/RequestsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import PickLocationScreen from '../screens/PickLocationScreen';
+import FullMapScreen from '../screens/FullMapScreen';
 
 import { AuthContext } from '../contexts/AuthContext';
 
@@ -58,6 +59,11 @@ function AppStackScreen() {
         name="PostDetail" 
         component={PostDetailScreen} 
         options={{ title: 'Post Details' }} 
+      />
+      <AppStack.Screen 
+        name="FullMap" 
+        component={FullMapScreen} 
+        options={{ title: 'Full Map' }} 
       />
       <AppStack.Screen 
         name="Requests" 

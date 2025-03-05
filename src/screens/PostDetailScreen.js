@@ -1,11 +1,11 @@
 // src/screens/PostDetailScreen.js
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, Image, ScrollView, Alert, ActivityIndicator, TouchableOpacity, Platform, Dimensions } from 'react-native';
 import { doc, getDoc } from 'firebase/firestore';
+import MapView, { Marker, Circle } from 'react-native-maps';
 import { db } from '../config/firebaseConfig';
 import { sendRequest } from '../utils/requestUtils';
 import { AuthContext } from '../contexts/AuthContext';
-
 
 export default function PostDetailScreen({ route, navigation }) {
   const { postId } = route.params;
@@ -58,6 +58,17 @@ export default function PostDetailScreen({ route, navigation }) {
     }
   };
 
+  // Compute approximate location with small random offset to obscure the exact location.
+  const getApproximateLocation = (loc) => {
+    const offset = (Math.random() - 0.5) * 0.002; // ±0.001 approx
+    return {
+      latitude: loc.latitude + offset,
+      longitude: loc.longitude + offset,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    };
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -75,16 +86,32 @@ export default function PostDetailScreen({ route, navigation }) {
     );
   }
 
+  const approxRegion = getApproximateLocation(post.location);
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{post.name}</Text>
       <Text style={styles.category}>Category: {post.category}</Text>
       <Text style={styles.description}>{post.description}</Text>
       <Text style={styles.location}>
-        Location:{' '}
-        {post.location.address ||
-          `Lat: ${post.location.latitude}, Lng: ${post.location.longitude}`}
+        Approximate Location:
       </Text>
+      <TouchableOpacity onPress={() => navigation.navigate('FullMap', { location: post.location })}>
+        <MapView
+          style={styles.mapPreview}
+          provider={Platform.OS === 'android' ? 'google' : undefined}
+          region={approxRegion}
+          pointerEvents="none" // disables interaction for preview
+        >
+  
+          <Circle
+            center={approxRegion}
+            radius={300} // Adjust radius as needed
+            strokeColor="rgba(0,0,255,0.5)"
+            fillColor="rgba(0,0,255,0.2)"
+          />
+        </MapView>
+      </TouchableOpacity>
       {post.photos && post.photos.length > 0 && (
         <ScrollView horizontal style={styles.photosContainer}>
           {post.photos.map((url, index) => (
@@ -94,6 +121,8 @@ export default function PostDetailScreen({ route, navigation }) {
       )}
       <Text style={styles.additionalInfo}>Additional Info: {post.additionalInfo}</Text>
       <Text style={styles.status}>Status: {post.status}</Text>
+      
+      {/* Request section */}
       <View style={styles.requestContainer}>
         <Text style={styles.requestTitle}>Send Request to Claim this Item</Text>
         <TextInput
@@ -115,7 +144,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: 'bold', marginBottom: 10 },
   category: { fontSize: 16, fontStyle: 'italic', marginBottom: 5 },
   description: { fontSize: 16, marginBottom: 10 },
-  location: { fontSize: 16, marginBottom: 10 },
+  location: { fontSize: 16, marginBottom: 5 },
+  mapPreview: { width: Dimensions.get('window').width - 40, height: 150, borderRadius: 10, marginBottom: 10 },
   photosContainer: { marginVertical: 10 },
   photo: { width: 200, height: 200, marginRight: 10 },
   additionalInfo: { fontSize: 16, marginBottom: 10 },
