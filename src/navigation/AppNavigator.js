@@ -1,81 +1,122 @@
-// src/navigation/AppNavigator.js
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View } from 'react-native';
 
 // Import your screens
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
-import HomeScreen from '../screens/HomeScreen';
-import CreatePostScreen from '../screens/CreatePostScreen';
-import FoundPostsListScreen from '../screens/FoundPostsListScreen';
-import PostDetailScreen from '../screens/PostDetailScreen';
-import RequestsScreen from '../screens/RequestsScreen';
+import FoundScreen from '../screens/FoundScreen';
+import LostScreen from '../screens/LostScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import CreatePostScreen from '../screens/CreatePostScreen';
 import PickLocationScreen from '../screens/PickLocationScreen';
+import PostDetailScreen from '../screens/PostDetailScreen';
 import FullMapScreen from '../screens/FullMapScreen';
+import RequestsScreen from '../screens/RequestsScreen';
 
 import { AuthContext } from '../contexts/AuthContext';
 
 const AuthStack = createStackNavigator();
-const AppStack = createStackNavigator();
+const FoundStack = createStackNavigator();
+const LostStack = createStackNavigator();
+const ProfileStack = createStackNavigator();
+const Tab = createBottomTabNavigator();
 
 function AuthStackScreen() {
   return (
     <AuthStack.Navigator initialRouteName="Login">
-      <AuthStack.Screen name="Login" component={LoginScreen} />
-      <AuthStack.Screen name="Signup" component={SignupScreen} />
+      <AuthStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+      <AuthStack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
       <AuthStack.Screen 
         name="ForgotPassword" 
         component={ForgotPasswordScreen} 
-        options={{ title: 'Reset Password' }} 
+        options={{ title: 'Reset Password', headerShown: false }} 
       />
     </AuthStack.Navigator>
   );
 }
 
-function AppStackScreen() {
+function FoundNavigator() {
   return (
-    <AppStack.Navigator>
-      <AppStack.Screen name="Home" component={HomeScreen} />
-      <AppStack.Screen 
-        name="CreatePost" 
-        component={CreatePostScreen} 
-        options={{ title: 'Create Found Post' }} 
+    <FoundStack.Navigator>
+      <FoundStack.Screen
+        name="FoundScreen"
+        component={FoundScreen}
+        options={{ title: 'Found' }}
       />
-      <AppStack.Screen
+      <FoundStack.Screen
+        name="CreatePost"
+        component={CreatePostScreen}
+        options={{ title: 'Create Post' }}
+      />
+      <FoundStack.Screen
         name="PickLocation"
         component={PickLocationScreen}
         options={{ title: 'Pick Location' }}
       />
-      <AppStack.Screen 
-        name="FoundPosts" 
-        component={FoundPostsListScreen} 
-        options={{ title: 'Found Posts Near You' }} 
+      <FoundStack.Screen
+        name="PostDetail"
+        component={PostDetailScreen}
+        options={{ title: 'Post Details' }}
       />
-      <AppStack.Screen 
-        name="PostDetail" 
-        component={PostDetailScreen} 
-        options={{ title: 'Post Details' }} 
+      <FoundStack.Screen
+        name="FullMap"
+        component={FullMapScreen}
+        options={{ title: 'Full Map' }}
       />
-      <AppStack.Screen 
-        name="FullMap" 
-        component={FullMapScreen} 
-        options={{ title: 'Full Map' }} 
+    </FoundStack.Navigator>
+  );
+}
+
+function LostNavigator() {
+  return (
+    <LostStack.Navigator>
+      <LostStack.Screen
+        name="LostScreen"
+        component={LostScreen}
+        options={{ title: 'Lost' }}
       />
-      <AppStack.Screen 
-        name="Requests" 
-        component={RequestsScreen} 
-        options={{ title: 'Requests for Your Posts' }} 
+      <LostStack.Screen
+        name="PostDetail"
+        component={PostDetailScreen}
+        options={{ title: 'Post Details' }}
       />
-      <AppStack.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        options={{ title: 'Profile' }} 
+      <LostStack.Screen
+        name="FullMap"
+        component={FullMapScreen}
+        options={{ title: 'Full Map' }}
       />
-    </AppStack.Navigator>
+    </LostStack.Navigator>
+  );
+}
+
+function ProfileNavigator() {
+  return (
+    <ProfileStack.Navigator>
+      <ProfileStack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: 'Profile' }}
+      />
+      <ProfileStack.Screen
+        name="Requests"
+        component={RequestsScreen}
+        options={{ title: 'Requests' }}
+      />
+    </ProfileStack.Navigator>
+  );
+}
+
+function AppTabNavigator() {
+  return (
+    <Tab.Navigator initialRouteName="Lost">
+      <Tab.Screen name="Found" component={FoundNavigator} />
+      <Tab.Screen name="Lost" component={LostNavigator} />
+      <Tab.Screen name="Profile" component={ProfileNavigator} />
+    </Tab.Navigator>
   );
 }
 
@@ -92,7 +133,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      {user ? <AppStackScreen /> : <AuthStackScreen />}
+      {user ? <AppTabNavigator /> : <AuthStackScreen />}
     </NavigationContainer>
   );
 }

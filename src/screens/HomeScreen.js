@@ -7,7 +7,7 @@ import { auth } from '../config/firebaseConfig';
 export default function HomeScreen({ navigation }) {
   const handleSignOut = async () => {
     await signOut(auth);
-    navigation.replace('Login');
+    navigation.navigate('Login');
   };
 
   return (

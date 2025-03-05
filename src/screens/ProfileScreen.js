@@ -45,7 +45,6 @@ export default function ProfileScreen({ navigation }) {
   const handleSignOut = async () => {
     try {
       await auth.signOut();
-      navigation.navigate('Login');
     } catch (error) {
       Alert.alert('Error', error.message);
     }
@@ -69,18 +68,6 @@ export default function ProfileScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Profile</Text>
       <Text style={styles.label}>Name: {profileName}</Text>
-
-      
-      
-
-      {/* Button to navigate to Found Posts */}
-      <Button
-        title="Your Posts"
-        onPress={() => navigation.navigate('FoundPosts')}
-      />
-
-
-
       <Button
         title="Requests"
         onPress={() => navigation.navigate('Requests')}

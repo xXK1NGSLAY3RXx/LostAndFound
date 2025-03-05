@@ -28,7 +28,6 @@ export default function LoginScreen({ navigation }) {
       await signInWithEmailAndPassword(auth, email, password);
       // Save the language preference to AsyncStorage
       await saveLanguagePreference(selectedLanguage);
-      navigation.navigate('Home');
     } catch (error) {
       setErrorMsg(error.message);
       Alert.alert('Error', error.message);

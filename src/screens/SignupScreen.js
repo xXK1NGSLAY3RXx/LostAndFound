@@ -30,7 +30,6 @@ export default function SignupScreen({ navigation }) {
       });
 
       // Navigate to Home screen after successful sign-up
-      navigation.navigate('Home');
     } catch (error) {
       setErrorMsg(error.message);
       Alert.alert('Error', error.message);
