@@ -1,15 +1,14 @@
-// src/screens/FullMapScreen.js
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Platform, Dimensions } from 'react-native';
+import { View, StyleSheet, Platform, Dimensions } from 'react-native';
 import MapView, { Circle } from 'react-native-maps';
 
 export default function FullMapScreen({ navigation, route }) {
-  // Expect a location passed from PostDetailScreen; otherwise, use a fallback
+  // Expect a location passed from PostDetailScreen; otherwise, use a fallback location (San Francisco)
   const { location } = route.params || {};
   const exactLocation = location || { latitude: 37.7749, longitude: -122.4194 };
 
-  // Create a small random offset to obscure the exact location
-  const randomOffset = () => (Math.random() - 0.5) * 0.002; // approximately ±0.001 degrees
+  // Create a small random offset to obscure the exact location for privacy reasons
+  const randomOffset = () => (Math.random() - 0.5) * 0.002; // Approximately ±0.001 degrees
   const approximateLocation = {
     latitude: exactLocation.latitude + randomOffset(),
     longitude: exactLocation.longitude + randomOffset(),
@@ -22,12 +21,12 @@ export default function FullMapScreen({ navigation, route }) {
       <MapView
         style={styles.map}
         provider={Platform.OS === 'android' ? 'google' : undefined}
-        region={approximateLocation}
+        region={approximateLocation} // Set the initial region to the approximate location
       >
-        {/* Only display the transparent circle */}
+        {/* Display a transparent circle to indicate the general area without exposing exact details */}
         <Circle
           center={approximateLocation}
-          radius={300} // radius in meters; adjust as needed
+          radius={300} // Radius in meters; adjust based on privacy requirements
           strokeColor="rgba(0,0,255,0.5)"
           fillColor="rgba(0,0,255,0.2)"
         />

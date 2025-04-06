@@ -1,22 +1,22 @@
-// src/screens/LostScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 
 export default function LostScreen({ navigation }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); // Stores user input for search query
+  const [results, setResults] = useState([]); // Holds search results
+  const [loading, setLoading] = useState(false); // Tracks loading state
 
+  // Handles search operation using Firestore query
   const handleSearch = async () => {
     setLoading(true);
     try {
-      // Assuming posts have a 'name' field; using a simple prefix query
+      // Perform a prefix-based search query on the 'name' field
       const q = query(
         collection(db, 'foundPosts'),
         where('name', '>=', searchQuery),
-        where('name', '<=', searchQuery + '\uf8ff')
+        where('name', '<=', searchQuery + '\\uf8ff')
       );
       const querySnapshot = await getDocs(q);
       const data = [];
@@ -31,6 +31,7 @@ export default function LostScreen({ navigation }) {
     }
   };
 
+  // Renders a single search result item
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.resultItem}
@@ -43,6 +44,7 @@ export default function LostScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Search input field */}
       <TextInput
         style={styles.searchInput}
         placeholder="Search lost items by name"
@@ -50,9 +52,13 @@ export default function LostScreen({ navigation }) {
         onChangeText={setSearchQuery}
         onSubmitEditing={handleSearch}
       />
+      
+      {/* Search button */}
       <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
         <Text style={styles.searchButtonText}>Search</Text>
       </TouchableOpacity>
+      
+      {/* Display loading indicator while fetching data */}
       {loading ? (
         <ActivityIndicator size="large" style={styles.loadingIndicator} />
       ) : (

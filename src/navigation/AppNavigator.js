@@ -19,12 +19,14 @@ import RequestsScreen from '../screens/RequestsScreen';
 
 import { AuthContext } from '../contexts/AuthContext';
 
+// Create stack navigators for different sections
 const AuthStack = createStackNavigator();
 const FoundStack = createStackNavigator();
 const LostStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Authentication stack for login, signup, and password reset
 function AuthStackScreen() {
   return (
     <AuthStack.Navigator initialRouteName="Login">
@@ -39,6 +41,7 @@ function AuthStackScreen() {
   );
 }
 
+// Navigator for Found-related screens
 function FoundNavigator() {
   return (
     <FoundStack.Navigator>
@@ -71,6 +74,7 @@ function FoundNavigator() {
   );
 }
 
+// Navigator for Lost-related screens
 function LostNavigator() {
   return (
     <LostStack.Navigator>
@@ -93,6 +97,7 @@ function LostNavigator() {
   );
 }
 
+// Navigator for Profile-related screens
 function ProfileNavigator() {
   return (
     <ProfileStack.Navigator>
@@ -110,6 +115,7 @@ function ProfileNavigator() {
   );
 }
 
+// Bottom tab navigator for main app sections
 function AppTabNavigator() {
   return (
     <Tab.Navigator initialRouteName="Lost">
@@ -120,11 +126,13 @@ function AppTabNavigator() {
   );
 }
 
+// Main navigation container deciding between auth flow and main app
 export default function AppNavigator() {
   const { user, loading } = useContext(AuthContext);
 
   if (loading) {
     return (
+      // Show loading indicator while checking authentication status
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
       </View>
@@ -133,7 +141,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      {user ? <AppTabNavigator /> : <AuthStackScreen />}
+      {user ? <AppTabNavigator /> : <AuthStackScreen />} {/* Show app if logged in, else auth screens */}
     </NavigationContainer>
   );
 }

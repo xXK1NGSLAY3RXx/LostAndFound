@@ -1,4 +1,3 @@
-// src/screens/FoundScreen.js
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
@@ -7,17 +6,19 @@ import { AuthContext } from '../contexts/AuthContext';
 
 export default function FoundScreen({ navigation }) {
   const { user } = useContext(AuthContext);
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState([]); // Stores the list of found posts
+  const [loading, setLoading] = useState(true); // Indicates loading state
 
   useEffect(() => {
     async function fetchUserPosts() {
       try {
+        // Query Firestore for posts created by the current user, ordered by creation date
         const q = query(
           collection(db, 'foundPosts'),
           where('creatorId', '==', user.uid),
           orderBy('createdAt', 'desc')
         );
+        
         const querySnapshot = await getDocs(q);
         const data = [];
         querySnapshot.forEach(doc => {
@@ -30,8 +31,9 @@ export default function FoundScreen({ navigation }) {
         setLoading(false);
       }
     }
+    
     fetchUserPosts();
-  }, [user.uid]);
+  }, [user.uid]); // Re-run effect when user UID changes
 
   if (loading) {
     return (
@@ -41,6 +43,7 @@ export default function FoundScreen({ navigation }) {
     );
   }
 
+  // Renders each post as a touchable item navigating to the PostDetail screen
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.postItem}
@@ -59,6 +62,8 @@ export default function FoundScreen({ navigation }) {
         renderItem={renderItem}
         ListEmptyComponent={<Text style={styles.emptyText}>No posts found.</Text>}
       />
+      
+      {/* Button to navigate to the Create Post screen */}
       <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreatePost')}>
         <Text style={styles.createButtonText}>Create Post</Text>
       </TouchableOpacity>

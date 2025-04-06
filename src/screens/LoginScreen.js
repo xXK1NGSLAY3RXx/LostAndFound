@@ -1,4 +1,3 @@
-// src/screens/LoginScreen.js
 import React, { useEffect, useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -7,12 +6,12 @@ import { Picker } from '@react-native-picker/picker';
 import { saveLanguagePreference, getLanguagePreference } from '../utils/languageStorage';
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('en'); // default language
-  const [errorMsg, setErrorMsg] = useState('');
+  const [email, setEmail] = useState(''); // Stores user email input
+  const [password, setPassword] = useState(''); // Stores user password input
+  const [selectedLanguage, setSelectedLanguage] = useState('en'); // Default language selection
+  const [errorMsg, setErrorMsg] = useState(''); // Stores any authentication error messages
 
-  // Load saved language preference, if available
+  // Load saved language preference from AsyncStorage on component mount
   useEffect(() => {
     async function loadLanguage() {
       const lang = await getLanguagePreference();
@@ -23,10 +22,11 @@ export default function LoginScreen({ navigation }) {
     loadLanguage();
   }, []);
 
+  // Handles user login with Firebase Authentication
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Save the language preference to AsyncStorage
+      // Save the selected language preference after successful login
       await saveLanguagePreference(selectedLanguage);
     } catch (error) {
       setErrorMsg(error.message);
@@ -37,7 +37,10 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
+      {/* Display error message if authentication fails */}
       {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
+      
+      {/* Email input field */}
       <TextInput
         placeholder="Email"
         value={email}
@@ -46,6 +49,8 @@ export default function LoginScreen({ navigation }) {
         keyboardType="email-address"
         autoCapitalize="none"
       />
+      
+      {/* Password input field */}
       <TextInput
         placeholder="Password"
         value={password}
@@ -53,10 +58,10 @@ export default function LoginScreen({ navigation }) {
         style={styles.input}
         secureTextEntry
       />
+      
       <Text style={styles.label}>Select Language:</Text>
       
-      <Button title="Login" onPress={handleLogin} />
-     
+      {/* Language picker dropdown */}
       <Picker
         selectedValue={selectedLanguage}
         style={styles.picker}
@@ -64,13 +69,17 @@ export default function LoginScreen({ navigation }) {
       >
         <Picker.Item label="English" value="en" />
         <Picker.Item label="Spanish" value="es" />
-        {/* Add additional languages as needed */}
       </Picker>
       
+      {/* Login button */}
+      <Button title="Login" onPress={handleLogin} />
+      
+      {/* Navigation link to signup screen */}
       <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
         <Text style={styles.link}>Don't have an account? Sign Up</Text>
       </TouchableOpacity>
 
+      {/* Navigation link to forgot password screen */}
       <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
         <Text style={styles.link}>Forgot your Password?</Text>
       </TouchableOpacity>

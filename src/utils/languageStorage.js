@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LANGUAGE_KEY = 'preferred_language';
 
+// Saves the user's preferred language to AsyncStorage
 export const saveLanguagePreference = async (language) => {
   try {
     await AsyncStorage.setItem(LANGUAGE_KEY, language);
@@ -11,6 +12,7 @@ export const saveLanguagePreference = async (language) => {
   }
 };
 
+// Retrieves the user's preferred language from AsyncStorage
 export const getLanguagePreference = async () => {
   try {
     const language = await AsyncStorage.getItem(LANGUAGE_KEY);

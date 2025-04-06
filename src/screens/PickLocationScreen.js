@@ -1,13 +1,12 @@
-// src/screens/PickLocationScreen.js
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Platform } from 'react-native';
 import MapView from 'react-native-maps';
 
 export default function PickLocationScreen({ navigation, route }) {
-  // Use passed currentLocation if available; otherwise fallback to default
+  // Use passed currentLocation if available; otherwise fallback to default location (San Francisco)
   const initialRegion = route.params?.currentLocation
     ? {
-        latitude: route.params.currentLocation.latitude - 0.0003 ,
+        latitude: route.params.currentLocation.latitude - 0.0003, // Slight offset for positioning
         longitude: route.params.currentLocation.longitude,
         latitudeDelta: 0.005,
         longitudeDelta: 0.005,
@@ -21,21 +20,22 @@ export default function PickLocationScreen({ navigation, route }) {
 
   const [region, setRegion] = useState(initialRegion);
 
-  // When the user pans/zooms the map, update the region state
+  // Updates the region state when the user moves or zooms the map
   const handleRegionChangeComplete = (newRegion) => {
     setRegion(newRegion);
   };
 
+  // Confirms the location and passes it back to CreatePost screen
   const handleConfirmLocation = () => {
     if (region) {
       navigation.replace('CreatePost', {
         pickedLocation: {
-          latitude: region.latitude + 0.00015,
+          latitude: region.latitude + 0.00015, // Slight adjustment to marker position
           longitude: region.longitude,
           latitudeDelta: 0.005,
           longitudeDelta: 0.005,
         },
-        formState: route.params?.formState,
+        formState: route.params?.formState, // Preserve form state if available
       });
     } else {
       alert("Please adjust the map to set a location");
@@ -50,10 +50,13 @@ export default function PickLocationScreen({ navigation, route }) {
         initialRegion={initialRegion}
         onRegionChangeComplete={handleRegionChangeComplete}
       />
-      {/* Fixed marker (red dot) overlay in the center */}
+      
+      {/* Fixed marker overlay in the center of the screen */}
       <View style={styles.fixedMarkerContainer}>
         <View style={styles.fixedMarker} />
       </View>
+      
+      {/* Button to confirm the selected location */}
       <TouchableOpacity style={styles.button} onPress={handleConfirmLocation}>
         <Text style={styles.buttonText}>Confirm Location</Text>
       </TouchableOpacity>
@@ -68,8 +71,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    marginLeft: -10, // half of marker width
-    marginTop: -10, // half of marker height
+    marginLeft: -10, // Center marker horizontally
+    marginTop: -10, // Center marker vertically
     zIndex: 1,
   },
   fixedMarker: {

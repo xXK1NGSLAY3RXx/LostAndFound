@@ -1,4 +1,3 @@
-// src/utils/geoUtils.js
 import { geohashForLocation, geohashQueryBounds, distanceBetween } from 'geofire-common';
 
 /**

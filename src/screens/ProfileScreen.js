@@ -1,4 +1,3 @@
-// src/screens/ProfileScreen.js
 import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { doc, getDoc } from 'firebase/firestore';
@@ -9,9 +8,9 @@ import { Picker } from '@react-native-picker/picker';
 
 export default function ProfileScreen({ navigation }) {
   const { user } = useContext(AuthContext);
-  const [profileName, setProfileName] = useState('');
-  const [preferredLanguage, setPreferredLanguage] = useState('en');
-  const [loading, setLoading] = useState(true);
+  const [profileName, setProfileName] = useState(''); // Stores user's profile name
+  const [preferredLanguage, setPreferredLanguage] = useState('en'); // Stores user's language preference
+  const [loading, setLoading] = useState(true); // Tracks profile loading state
 
   // Load user profile data from Firestore
   useEffect(() => {
@@ -26,7 +25,6 @@ export default function ProfileScreen({ navigation }) {
       } catch (error) {
         console.error('Error fetching user profile:', error);
       } finally {
-        // IMPORTANT: set loading to false here, so the UI can update
         setLoading(false);
       }
     }
@@ -42,6 +40,7 @@ export default function ProfileScreen({ navigation }) {
     loadLanguage();
   }, []);
 
+  // Handles user sign-out
   const handleSignOut = async () => {
     try {
       await auth.signOut();
@@ -50,6 +49,7 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  // Handles language change and saves preference
   const handleLanguageChange = async (lang) => {
     setPreferredLanguage(lang);
     await saveLanguagePreference(lang);
@@ -68,13 +68,16 @@ export default function ProfileScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Profile</Text>
       <Text style={styles.label}>Name: {profileName}</Text>
+      
+      {/* Button to navigate to user requests */}
       <Button
         title="Requests"
         onPress={() => navigation.navigate('Requests')}
       />
 
-
       <Text style={styles.label}>Preferred Language:</Text>
+      
+      {/* Language selection dropdown */}
       <Picker
         selectedValue={preferredLanguage}
         style={styles.picker}
@@ -82,10 +85,9 @@ export default function ProfileScreen({ navigation }) {
       >
         <Picker.Item label="English" value="en" />
         <Picker.Item label="Spanish" value="es" />
-        {/* Add more languages as needed */}
       </Picker>
 
-      {/* Sign Out button */}
+      {/* Sign-out button */}
       <TouchableOpacity style={styles.button} onPress={handleSignOut}>
         <Text style={styles.buttonText}>Sign Out</Text>
       </TouchableOpacity>

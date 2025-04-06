@@ -1,14 +1,14 @@
-// src/screens/ForgotPasswordScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
 
 export default function ForgotPasswordScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [email, setEmail] = useState(''); // Stores user input email
+  const [message, setMessage] = useState(''); // Success message state
+  const [errorMsg, setErrorMsg] = useState(''); // Error message state
 
+  // Function to handle password reset request
   const handlePasswordReset = async () => {
     try {
       await sendPasswordResetEmail(auth, email);
@@ -23,8 +23,11 @@ export default function ForgotPasswordScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Reset Password</Text>
+      {/* Display success or error message */}
       {message ? <Text style={styles.message}>{message}</Text> : null}
       {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
+      
+      {/* Input field for email */}
       <TextInput
         style={styles.input}
         placeholder="Enter your email"
@@ -33,6 +36,8 @@ export default function ForgotPasswordScreen({ navigation }) {
         keyboardType="email-address"
         autoCapitalize="none"
       />
+      
+      {/* Button to send reset email */}
       <Button title="Send Reset Email" onPress={handlePasswordReset} />
     </View>
   );
