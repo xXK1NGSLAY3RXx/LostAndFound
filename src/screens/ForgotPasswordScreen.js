@@ -23,11 +23,11 @@ export default function ForgotPasswordScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Reset Password</Text>
-      {/* Display success or error message */}
+      
       {message ? <Text style={styles.message}>{message}</Text> : null}
       {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
       
-      {/* Input field for email */}
+      
       <TextInput
         style={styles.input}
         placeholder="Enter your email"
@@ -37,7 +37,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         autoCapitalize="none"
       />
       
-      {/* Button to send reset email */}
+      
       <Button title="Send Reset Email" onPress={handlePasswordReset} />
     </View>
   );

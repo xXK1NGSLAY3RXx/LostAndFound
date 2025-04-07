@@ -209,7 +209,7 @@ export default function CreatePostScreen({ navigation, route }) {
       
       <TextInput placeholder="Additional Info" value={additionalInfo} onChangeText={setAdditionalInfo} style={styles.input} />
 
-      {/* Mini Map Preview: Tapping navigates to PickLocationScreen, passing current location and form state */}
+      
       <TouchableOpacity
         onPress={() =>
           navigation.navigate('PickLocation', {

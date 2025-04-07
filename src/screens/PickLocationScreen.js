@@ -51,12 +51,12 @@ export default function PickLocationScreen({ navigation, route }) {
         onRegionChangeComplete={handleRegionChangeComplete}
       />
       
-      {/* Fixed marker overlay in the center of the screen */}
+      
       <View style={styles.fixedMarkerContainer}>
         <View style={styles.fixedMarker} />
       </View>
       
-      {/* Button to confirm the selected location */}
+     
       <TouchableOpacity style={styles.button} onPress={handleConfirmLocation}>
         <Text style={styles.buttonText}>Confirm Location</Text>
       </TouchableOpacity>

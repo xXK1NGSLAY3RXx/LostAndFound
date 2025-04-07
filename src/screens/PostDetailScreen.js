@@ -20,6 +20,10 @@ import { db } from '../config/firebaseConfig';
 import { sendRequest } from '../utils/requestUtils';
 import { AuthContext } from '../contexts/AuthContext';
 
+// 1) IMPORT the translation helpers:
+import { getLanguagePreference } from '../utils/languageStorage';
+import { translateText } from '../utils/translateUtils';
+
 export default function PostDetailScreen({ route, navigation }) {
   const { postId } = route.params;
   const [post, setPost] = useState(null);
@@ -27,6 +31,19 @@ export default function PostDetailScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [approxRegion, setApproxRegion] = useState(null);
   const { user } = useContext(AuthContext);
+
+  // 2) State for translation:
+  const [translatedDescription, setTranslatedDescription] = useState(null);
+  const [preferredLanguage, setPreferredLanguage] = useState('en');
+  const [translating, setTranslating] = useState(false);
+
+  // Fetch user’s language preference
+  useEffect(() => {
+    (async () => {
+      const lang = await getLanguagePreference();
+      setPreferredLanguage(lang || 'en');
+    })();
+  }, []);
 
   // Compute approximate location only once after the post is loaded.
   const getApproximateLocation = (loc) => {
@@ -70,20 +87,39 @@ export default function PostDetailScreen({ route, navigation }) {
       Alert.alert('Validation', 'Please enter a message for your request.');
       return;
     }
-    
+
     const requestData = {
       senderId: user.uid,
       founderId: post.creatorId,
       itemId: post.id,
       description: requestMessage,
     };
-  
+
     try {
       await sendRequest(requestData);
       Alert.alert('Success', 'Your request has been sent.');
       setRequestMessage('');
     } catch (error) {
       Alert.alert('Error', error.message);
+    }
+  };
+
+  // 3) Handle translation
+  const handleTranslateDescription = async () => {
+    if (!post || !post.description) return;
+    try {
+      setTranslating(true);
+      const translated = await translateText(post.description, preferredLanguage);
+      if (translated) {
+        setTranslatedDescription(translated);
+      } else {
+        Alert.alert('Translation Error', 'Unable to translate text.');
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+      Alert.alert('Translation Error', 'An error occurred while translating.');
+    } finally {
+      setTranslating(false);
     }
   };
 
@@ -121,9 +157,27 @@ export default function PostDetailScreen({ route, navigation }) {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>{post.name}</Text>
         <Text style={styles.category}>Category: {post.category}</Text>
-        <Text style={styles.description}>{post.description}</Text>
+
+        {/* 4) Show either the original description or the translated version */}
+        <Text style={styles.description}>
+          {translatedDescription || post.description}
+        </Text>
+
+        {/* 5) "Translate" button if not yet translated */}
+        {!translatedDescription && (
+          <View style={{ marginVertical: 10 }}>
+            {translating ? (
+              <ActivityIndicator size="small" />
+            ) : (
+              <Button title="Translate" onPress={handleTranslateDescription} />
+            )}
+          </View>
+        )}
+
         <Text style={styles.location}>Approximate Location:</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('FullMap', { location: post.location })}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('FullMap', { location: post.location })}
+        >
           <MapView
             style={styles.mapPreview}
             provider={Platform.OS === 'android' ? 'google' : undefined}
@@ -132,12 +186,13 @@ export default function PostDetailScreen({ route, navigation }) {
           >
             <Circle
               center={region}
-              radius={300} 
+              radius={300}
               strokeColor="rgba(0,0,255,0.5)"
               fillColor="rgba(0,0,255,0.2)"
             />
           </MapView>
         </TouchableOpacity>
+
         {post.photos && post.photos.length > 0 && (
           <ScrollView horizontal style={styles.photosContainer}>
             {post.photos.map((url, index) => (
@@ -145,10 +200,12 @@ export default function PostDetailScreen({ route, navigation }) {
             ))}
           </ScrollView>
         )}
-        <Text style={styles.additionalInfo}>Additional Info: {post.additionalInfo}</Text>
+
+        <Text style={styles.additionalInfo}>
+          Additional Info: {post.additionalInfo}
+        </Text>
         <Text style={styles.status}>Status: {post.status}</Text>
-        
-        {/* Conditionally render request section only if the current user did not create this post */}
+
         {user.uid !== post.creatorId ? (
           <View style={styles.requestContainer}>
             <Text style={styles.requestTitle}>Send Request to Claim this Item</Text>
@@ -163,7 +220,9 @@ export default function PostDetailScreen({ route, navigation }) {
           </View>
         ) : (
           <View style={styles.requestContainer}>
-            <Text style={styles.requestTitle}>You cannot send a request for your own post.</Text>
+            <Text style={styles.requestTitle}>
+              You cannot send a request for your own post.
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -178,12 +237,22 @@ const styles = StyleSheet.create({
   category: { fontSize: 16, fontStyle: 'italic', marginBottom: 5 },
   description: { fontSize: 16, marginBottom: 10 },
   location: { fontSize: 16, marginBottom: 5 },
-  mapPreview: { width: Dimensions.get('window').width - 40, height: 150, borderRadius: 10, marginBottom: 10 },
+  mapPreview: {
+    width: Dimensions.get('window').width - 40,
+    height: 150,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
   photosContainer: { marginVertical: 10 },
   photo: { width: 200, height: 200, marginRight: 10 },
   additionalInfo: { fontSize: 16, marginBottom: 10 },
   status: { fontSize: 16, marginBottom: 20 },
-  requestContainer: { borderTopWidth: 1, borderTopColor: '#ccc', paddingTop: 20 },
+  requestContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+    paddingTop: 20,
+    marginTop: 20,
+  },
   requestTitle: { fontSize: 18, marginBottom: 10 },
   requestInput: {
     borderWidth: 1,

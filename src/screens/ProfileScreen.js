@@ -69,7 +69,7 @@ export default function ProfileScreen({ navigation }) {
       <Text style={styles.title}>Profile</Text>
       <Text style={styles.label}>Name: {profileName}</Text>
       
-      {/* Button to navigate to user requests */}
+      
       <Button
         title="Requests"
         onPress={() => navigation.navigate('Requests')}
@@ -77,7 +77,7 @@ export default function ProfileScreen({ navigation }) {
 
       <Text style={styles.label}>Preferred Language:</Text>
       
-      {/* Language selection dropdown */}
+      
       <Picker
         selectedValue={preferredLanguage}
         style={styles.picker}
@@ -87,7 +87,7 @@ export default function ProfileScreen({ navigation }) {
         <Picker.Item label="Spanish" value="es" />
       </Picker>
 
-      {/* Sign-out button */}
+      
       <TouchableOpacity style={styles.button} onPress={handleSignOut}>
         <Text style={styles.buttonText}>Sign Out</Text>
       </TouchableOpacity>

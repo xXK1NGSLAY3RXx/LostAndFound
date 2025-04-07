@@ -63,7 +63,7 @@ export default function FoundScreen({ navigation }) {
         ListEmptyComponent={<Text style={styles.emptyText}>No posts found.</Text>}
       />
       
-      {/* Button to navigate to the Create Post screen */}
+     
       <TouchableOpacity style={styles.createButton} onPress={() => navigation.navigate('CreatePost')}>
         <Text style={styles.createButtonText}>Create Post</Text>
       </TouchableOpacity>

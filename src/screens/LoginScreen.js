@@ -37,10 +37,10 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
-      {/* Display error message if authentication fails */}
+      
       {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
       
-      {/* Email input field */}
+     
       <TextInput
         placeholder="Email"
         value={email}
@@ -50,7 +50,7 @@ export default function LoginScreen({ navigation }) {
         autoCapitalize="none"
       />
       
-      {/* Password input field */}
+      
       <TextInput
         placeholder="Password"
         value={password}
@@ -61,7 +61,7 @@ export default function LoginScreen({ navigation }) {
       
       <Text style={styles.label}>Select Language:</Text>
       
-      {/* Language picker dropdown */}
+      
       <Picker
         selectedValue={selectedLanguage}
         style={styles.picker}
@@ -71,15 +71,15 @@ export default function LoginScreen({ navigation }) {
         <Picker.Item label="Spanish" value="es" />
       </Picker>
       
-      {/* Login button */}
+     
       <Button title="Login" onPress={handleLogin} />
       
-      {/* Navigation link to signup screen */}
+     
       <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
         <Text style={styles.link}>Don't have an account? Sign Up</Text>
       </TouchableOpacity>
 
-      {/* Navigation link to forgot password screen */}
+     
       <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
         <Text style={styles.link}>Forgot your Password?</Text>
       </TouchableOpacity>

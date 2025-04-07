@@ -141,7 +141,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      {user ? <AppTabNavigator /> : <AuthStackScreen />} {/* Show app if logged in, else auth screens */}
+      {user ? <AppTabNavigator /> : <AuthStackScreen />} 
     </NavigationContainer>
   );
 }

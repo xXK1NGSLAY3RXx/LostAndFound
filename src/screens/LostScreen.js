@@ -44,7 +44,7 @@ export default function LostScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Search input field */}
+   
       <TextInput
         style={styles.searchInput}
         placeholder="Search lost items by name"
@@ -53,12 +53,12 @@ export default function LostScreen({ navigation }) {
         onSubmitEditing={handleSearch}
       />
       
-      {/* Search button */}
+     
       <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
         <Text style={styles.searchButtonText}>Search</Text>
       </TouchableOpacity>
       
-      {/* Display loading indicator while fetching data */}
+     
       {loading ? (
         <ActivityIndicator size="large" style={styles.loadingIndicator} />
       ) : (

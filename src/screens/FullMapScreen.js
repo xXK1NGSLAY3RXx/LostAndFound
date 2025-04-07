@@ -23,7 +23,7 @@ export default function FullMapScreen({ navigation, route }) {
         provider={Platform.OS === 'android' ? 'google' : undefined}
         region={approximateLocation} // Set the initial region to the approximate location
       >
-        {/* Display a transparent circle to indicate the general area without exposing exact details */}
+        
         <Circle
           center={approximateLocation}
           radius={300} // Radius in meters; adjust based on privacy requirements
