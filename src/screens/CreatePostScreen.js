@@ -153,22 +153,29 @@ export default function CreatePostScreen({ navigation, route }) {
     try {
       // First, upload all selected images
       const uploadedURLs = await uploadAllImages();
+
       // Create the post document with the download URLs
       const lat = location.latitude;
       const lng = location.longitude;
       const geohash = getGeohash(lat, lng);
+
       await addDoc(collection(db, 'foundPosts'), {
         name,
         category,
         description,
         location: new GeoPoint(lat, lng),
         geohash,
-        photos: uploadedURLs, // Array of download URLs from Firebase Storage
+        photos: uploadedURLs,
         additionalInfo,
         creatorId: user ? user.uid : 'unknown',
         status: 'available',
         createdAt: serverTimestamp(),
+
+        // Store lowercased fields for case-insensitive search
+        name_lower: name.toLowerCase(),
+        category_lower: category.toLowerCase(),
       });
+
       Alert.alert('Success', 'Post created successfully.');
       navigation.goBack();
     } catch (error) {
@@ -190,15 +197,31 @@ export default function CreatePostScreen({ navigation, route }) {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Create Found Post</Text>
       {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
-      <TextInput placeholder="Item Name" value={name} onChangeText={setName} style={styles.input} />
-      <TextInput placeholder="Category" value={category} onChangeText={setCategory} style={styles.input} />
-      <TextInput placeholder="Description" value={description} onChangeText={setDescription} style={styles.input} />
-      
+      <TextInput
+        placeholder="Item Name"
+        value={name}
+        onChangeText={setName}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Category"
+        value={category}
+        onChangeText={setCategory}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Description"
+        value={description}
+        onChangeText={setDescription}
+        style={styles.input}
+      />
+
       <View style={styles.buttonRow}>
         <Button title="Pick Image" onPress={pickImage} />
         <Button title="Take Photo" onPress={takePhoto} />
       </View>
       {uploading && <Text>Uploading image(s)...</Text>}
+
       {photos.length > 0 && (
         <View style={styles.imagePreviewContainer}>
           {photos.map((uri, index) => (
@@ -206,10 +229,14 @@ export default function CreatePostScreen({ navigation, route }) {
           ))}
         </View>
       )}
-      
-      <TextInput placeholder="Additional Info" value={additionalInfo} onChangeText={setAdditionalInfo} style={styles.input} />
 
-      
+      <TextInput
+        placeholder="Additional Info"
+        value={additionalInfo}
+        onChangeText={setAdditionalInfo}
+        style={styles.input}
+      />
+
       <TouchableOpacity
         onPress={() =>
           navigation.navigate('PickLocation', {
@@ -235,7 +262,8 @@ export default function CreatePostScreen({ navigation, route }) {
         </View>
       </TouchableOpacity>
       <Text style={styles.locationText}>
-        Current Location: {location ? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}` : 'Not available'}
+        Current Location:{' '}
+        {location ? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}` : 'Not available'}
       </Text>
 
       <Button title="Create Post" onPress={handleCreatePost} />
@@ -249,10 +277,24 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
   input: { borderWidth: 1, borderColor: 'gray', padding: 10, marginBottom: 15 },
   error: { color: 'red', textAlign: 'center', marginBottom: 15 },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
-  imagePreviewContainer: { flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  imagePreviewContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginVertical: 10,
+  },
   imagePreview: { width: 100, height: 100, marginRight: 10, marginBottom: 10 },
-  mapPreview: { width: '100%', height: 150, borderWidth: 1, borderColor: 'gray', marginBottom: 15 },
+  mapPreview: {
+    width: '100%',
+    height: 150,
+    borderWidth: 1,
+    borderColor: 'gray',
+    marginBottom: 15,
+  },
   map: { width: '100%', height: '100%' },
   locationText: { marginTop: 20, textAlign: 'center', fontStyle: 'italic' },
 });
