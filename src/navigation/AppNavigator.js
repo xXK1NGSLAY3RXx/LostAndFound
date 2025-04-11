@@ -118,7 +118,9 @@ function ProfileNavigator() {
 // Bottom tab navigator for main app sections
 function AppTabNavigator() {
   return (
-    <Tab.Navigator initialRouteName="Lost">
+    <Tab.Navigator initialRouteName="Lost" screenOptions={{
+        headerShown: false, // Hide top header in the tab
+      }}>
       <Tab.Screen name="Found" component={FoundNavigator} />
       <Tab.Screen name="Lost" component={LostNavigator} />
       <Tab.Screen name="Profile" component={ProfileNavigator} />

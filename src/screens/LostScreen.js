@@ -9,6 +9,8 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  Modal,
+  FlatList,
 } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -24,8 +26,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 // Slider for radius
 import Slider from '@react-native-community/slider';
 
-// REUSABLE ITEM LAYOUT
+// Reusable item layout
 import LostFoundItem from '../components/LostFoundItem';
+
+// 1) Import the large categories list
+import { CATEGORIES } from '../constants/categoriesList';
 
 export default function LostScreen() {
   // ---------------------------
@@ -75,7 +80,12 @@ export default function LostScreen() {
   // ---------------------------
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+
+  // 2) Instead of typed categoryFilter, we do a modal approach
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+
   const [dateFilter, setDateFilter] = useState(null);
   const [radius, setRadius] = useState(1); // in km
 
@@ -84,19 +94,31 @@ export default function LostScreen() {
 
   const navigation = useNavigation();
 
-  // DateTimePicker change
+  // For the date picker
   const onDateChange = (event, selectedDate) => {
     if (event.type === 'set') {
       setDateFilter(selectedDate);
     }
   };
 
-  // ---------------------------
   // BOTTOM SHEET
-  // ---------------------------
   const bottomSheetRef = useRef(null);
-  // two states: 15% or 80%
-  const snapPoints = ['27%', '80%'];
+  const snapPoints = ['27%', '80%']; // min or max
+
+  // ---------------------------
+  // CATEGORY MODAL LOGIC
+  // ---------------------------
+  // Filter categories by user typed search
+  const filteredCategories = CATEGORIES.filter((cat) =>
+    cat.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const handleSelectCategory = (cat) => {
+    // We store the user-selected category in upper-case or title-case (your choice).
+    // For demonstration, let's keep it as-is from the CATEGORIES array:
+    setCategoryFilter(cat);
+    setCategoryModalVisible(false);
+  };
 
   // ---------------------------
   // SEARCH
@@ -142,23 +164,28 @@ export default function LostScreen() {
           const lng = data.location.longitude;
           const distInM = getDistanceInMeters([centerLat, centerLng], [lat, lng]);
 
+          // We only add docs within radius
           if (distInM <= radiusInMeters) {
-            // Substring matching
+            // Substring matching for name
             if (data.name_lower && data.name_lower.includes(searchTerm.toLowerCase())) {
-              // Category if user set one
+              // If user selected a category, we match data.category_lower to that
               if (categoryFilter.trim()) {
-                if (!data.category_lower ||
-                    data.category_lower !== categoryFilter.toLowerCase()) {
-                  return;
+                // Compare lowercased to user-lower
+                // e.g. "Electronics" -> "electronics"
+                const chosenCatLower = categoryFilter.toLowerCase();
+                if (!data.category_lower || data.category_lower !== chosenCatLower) {
+                  return; // skip
                 }
               }
-              // Date filter if not null
+
+              // If dateFilter is chosen, skip older ones
               if (dateFilter && data.createdAt) {
                 const createdAt = data.createdAt.toDate?.();
                 if (createdAt && createdAt < dateFilter) {
-                  return; // skip older
+                  return;
                 }
               }
+
               matchingDocs.push({
                 id: docSnap.id,
                 ...data,
@@ -196,120 +223,167 @@ export default function LostScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* MAP */}
-      <MapView
-        style={StyleSheet.absoluteFillObject}
-        provider={Platform.OS === 'android' ? 'google' : undefined}
-        region={mapRegion}
-        onRegionChangeComplete={handleRegionChangeComplete}
-      >
-        {hasLocationPermission && userLocation && (
-          <Marker
-            coordinate={{ latitude: userLocation.latitude, longitude: userLocation.longitude }}
-            title="You"
+    <>
+      <View style={styles.container}>
+        {/* MAP */}
+        <MapView
+          style={StyleSheet.absoluteFillObject}
+          provider={Platform.OS === 'android' ? 'google' : undefined}
+          region={mapRegion}
+          onRegionChangeComplete={handleRegionChangeComplete}
+        >
+          {hasLocationPermission && userLocation && (
+            <Marker
+              coordinate={{ latitude: userLocation.latitude, longitude: userLocation.longitude }}
+              title="You"
+            />
+          )}
+          <Circle
+            center={{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }}
+            radius={radius * 1000}
+            strokeColor="rgba(0,0,255,0.5)"
+            fillColor="rgba(0,0,255,0.1)"
           />
-        )}
-        <Circle
-          center={{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }}
-          radius={radius * 1000}
-          strokeColor="rgba(0,0,255,0.5)"
-          fillColor="rgba(0,0,255,0.1)"
-        />
-      </MapView>
+        </MapView>
 
-      {/* TOP SEARCH BAR */}
-      <View style={styles.topBar}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search item..."
-          value={searchTerm}
-          onChangeText={setSearchTerm}
-        />
+        {/* TOP SEARCH BAR */}
+        <View style={styles.topBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search item..."
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+          />
+        </View>
+
+        {/* BOTTOM SHEET */}
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={0}
+          snapPoints={snapPoints}
+          enableOverDrag={false}
+          enablePanDownToClose={false}
+        >
+          <BottomSheetScrollView contentContainerStyle={styles.sheetContent}>
+            {/* RADIUS SLIDER */}
+            <Text style={styles.sliderLabel}>Radius: {radius} km</Text>
+            <Slider
+              style={styles.sliderStyle}
+              minimumValue={1}
+              maximumValue={50}
+              step={1}
+              value={radius}
+              onValueChange={(val) => setRadius(val)}
+            />
+
+            {/* Search & Filter Buttons */}
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.searchBtnText}>Search</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.filterBtn}
+                onPress={() => setShowFilters((prev) => !prev)}
+              >
+                <Text style={styles.filterBtnText}>Filters</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Show filters (category & date) if toggled */}
+            {showFilters && (
+              <View style={styles.filterContainer}>
+                <Text style={styles.filterLabel}>Category:</Text>
+                {/* Instead of a direct TextInput, let's do a button that opens a modal */}
+                <TouchableOpacity
+                  style={styles.categoryButton}
+                  onPress={() => setCategoryModalVisible(true)}
+                >
+                  <Text style={styles.categoryButtonText}>
+                    {categoryFilter || 'Tap to select category'}
+                  </Text>
+                </TouchableOpacity>
+
+                <Text style={styles.filterLabel}>Show posts after date:</Text>
+                <DateTimePicker
+                  value={dateFilter || new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                  maximumDate={new Date()}
+                />
+              </View>
+            )}
+
+            {/* RESULTS */}
+            <Text style={styles.resultTitle}>Results</Text>
+            {searchResults.length === 0 && !loading ? (
+              <Text>No Results</Text>
+            ) : (
+              searchResults.map((item) => (
+                <View key={item.id} style={styles.resultItemContainer}>
+                  {/* Reusable layout */}
+                  <LostFoundItem
+                    item={item}
+                    onPressView={() => {
+                      navigation.navigate('PostDetail', { postId: item.id });
+                    }}
+                  />
+                </View>
+              ))
+            )}
+          </BottomSheetScrollView>
+        </BottomSheet>
       </View>
 
-      {/* BOTTOM SHEET */}
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={0}
-        snapPoints={snapPoints}
-        enableOverDrag={false}
-        enablePanDownToClose={false}
+      {/* 3) Category Modal for filtering */}
+      <Modal
+        visible={categoryModalVisible}
+        animationType="slide"
+        onRequestClose={() => setCategoryModalVisible(false)}
       >
-        <BottomSheetScrollView contentContainerStyle={styles.sheetContent}>
-          {/* RADIUS SLIDER */}
-          <Text style={styles.sliderLabel}>Radius: {radius} km</Text>
-          <Slider
-            style={styles.sliderStyle}
-            minimumValue={1}
-            maximumValue={10}
-            step={1}
-            value={radius}
-            onValueChange={(val) => setRadius(val)}
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Select Category Filter</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search categories..."
+            value={categorySearch}
+            onChangeText={setCategorySearch}
           />
 
-          {/* Search & Filter Buttons */}
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.searchBtnText}>Search</Text>
-              )}
-            </TouchableOpacity>
+          <FlatList
+            data={filteredCategories}
+            keyExtractor={(cat) => cat}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.categoryItem}
+                onPress={() => {
+                  handleSelectCategory(item);
+                }}
+              >
+                <Text style={styles.categoryItemText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <Text style={{ textAlign: 'center', marginTop: 20 }}>
+                No matching categories found.
+              </Text>
+            }
+          />
 
-            <TouchableOpacity
-              style={styles.filterBtn}
-              onPress={() => setShowFilters((prev) => !prev)}
-            >
-              <Text style={styles.filterBtnText}>Filters</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Show filters (category & date) if toggled */}
-          {showFilters && (
-            <View style={styles.filterContainer}>
-              <Text style={styles.filterLabel}>Category:</Text>
-              <TextInput
-                style={styles.filterInput}
-                placeholder="e.g. electronics"
-                value={categoryFilter}
-                onChangeText={setCategoryFilter}
-              />
-
-              <Text style={styles.filterLabel}>Show posts after date:</Text>
-              <DateTimePicker
-                value={dateFilter || new Date()}
-                mode="date"
-                display="default"
-                onChange={onDateChange}
-                maximumDate={new Date()}
-              />
-            </View>
-          )}
-
-          {/* RESULTS */}
-          <Text style={styles.resultTitle}>Results</Text>
-          {searchResults.length === 0 && !loading ? (
-            <Text>No Results</Text>
-          ) : (
-            searchResults.map((item) => (
-              <View key={item.id} style={styles.resultItemContainer}>
-                {/* Reusable layout */}
-                <LostFoundItem
-                  item={item}
-                  onPressView={() => {
-                    navigation.navigate('PostDetail', { postId: item.id });
-                  }}
-                  // don't pass showStatus, so it won't display "Status"
-                />
-                
-              </View>
-            ))
-          )}
-        </BottomSheetScrollView>
-      </BottomSheet>
-    </View>
+          <TouchableOpacity
+            style={styles.closeModalBtn}
+            onPress={() => setCategoryModalVisible(false)}
+          >
+            <Text style={{ color: '#fff' }}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -317,11 +391,7 @@ export default function LostScreen() {
 const screenWidth = Dimensions.get('window').width;
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topBar: {
     position: 'absolute',
     top: 0,
@@ -345,13 +415,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sliderLabel: {
-    fontSize: 16,
-    marginBottom: 5,
+    fontSize: 16, marginBottom: 5,
   },
   sliderStyle: {
-    width: '100%',
-    height: 40,
-    marginBottom: 10,
+    width: '100%', height: 40, marginBottom: 10,
   },
   actionRow: {
     flexDirection: 'row',
@@ -359,44 +426,38 @@ const styles = StyleSheet.create({
   },
   searchBtn: {
     backgroundColor: 'blue',
-    padding: 12,
-    borderRadius: 8,
+    padding: 12, borderRadius: 8,
     alignItems: 'center',
-    marginRight: 10,
-    flex: 1,
+    marginRight: 10, flex: 1,
   },
   searchBtnText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#fff', fontSize: 16,
   },
   filterBtn: {
     backgroundColor: 'gray',
-    padding: 12,
-    borderRadius: 8,
+    padding: 12, borderRadius: 8,
     alignItems: 'center',
   },
   filterBtnText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#fff', fontSize: 16,
   },
   filterContainer: {
     marginBottom: 20,
   },
   filterLabel: {
-    fontWeight: 'bold',
-    marginBottom: 5,
+    fontWeight: 'bold', marginTop: 10, marginBottom: 5,
   },
-  filterInput: {
+  categoryButton: {
+    borderWidth: 1, borderColor: 'gray',
+    padding: 10, borderRadius: 4,
     backgroundColor: '#f2f2f2',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    height: 35,
     marginBottom: 10,
   },
+  categoryButtonText: {
+    color: '#333',
+  },
   resultTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 18, fontWeight: 'bold', marginBottom: 8,
   },
   resultItemContainer: {
     backgroundColor: '#f9f9f9',
@@ -404,10 +465,24 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingVertical: 4,
   },
-  distanceText: {
-    marginLeft: 80, // indent so it lines up below the item text
-    fontStyle: 'italic',
-    marginBottom: 8,
-    color: '#444',
+
+  modalContainer: {
+    flex: 1, backgroundColor: '#fff', padding: 20,
+  },
+  modalTitle: {
+    fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 10,
+  },
+  categoryItem: {
+    padding: 12,
+    borderBottomWidth: 1, borderBottomColor: '#ccc',
+  },
+  categoryItemText: {
+    fontSize: 16,
+  },
+  closeModalBtn: {
+    backgroundColor: 'gray',
+    padding: 12, borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
   },
 });

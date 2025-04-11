@@ -11,6 +11,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Modal,
+  FlatList,
 } from 'react-native';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,21 +23,30 @@ import { db } from '../config/firebaseConfig';
 import { getGeohash } from '../utils/geoUtils';
 import { AuthContext } from '../contexts/AuthContext';
 
+// 1) Import the long list of categories from a separate file
+import { CATEGORIES } from '../constants/categoriesList';
+
 export default function CreatePostScreen({ navigation, route }) {
   const { user } = useContext(AuthContext);
 
   // Form fields
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState('');  // We'll fill from the modal
   const [description, setDescription] = useState('');
-  const [photos, setPhotos] = useState([]); // Array of image URIs
+  const [photos, setPhotos] = useState([]);
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Location state
+  // For location
   const [location, setLocation] = useState(null);
   const [locLoading, setLocLoading] = useState(true);
+
+  // For uploading images
   const [uploading, setUploading] = useState(false);
+
+  // 2) State for Category Modal
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [categorySearch, setCategorySearch] = useState(''); // search text
 
   // On mount: if location & formState were picked from PickLocationScreen, restore them
   useEffect(() => {
@@ -78,12 +89,11 @@ export default function CreatePostScreen({ navigation, route }) {
       return;
     }
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], // Updated per Expo docs
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-    console.log('ImagePicker result:', result);
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setPhotos([...photos, result.assets[0].uri]);
     }
@@ -101,7 +111,6 @@ export default function CreatePostScreen({ navigation, route }) {
       aspect: [4, 3],
       quality: 1,
     });
-    console.log('Camera result:', result);
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setPhotos([...photos, result.assets[0].uri]);
     }
@@ -144,24 +153,22 @@ export default function CreatePostScreen({ navigation, route }) {
     return urls;
   };
 
-  // Handle post creation: upload images first, then create the post document in Firestore
+  // Handle post creation
   const handleCreatePost = async () => {
     if (!name || !category || !description || !location) {
       Alert.alert('Error', 'Please fill in all required fields and ensure location is available.');
       return;
     }
     try {
-      // First, upload all selected images
+      // Upload images
       const uploadedURLs = await uploadAllImages();
-
-      // Create the post document with the download URLs
       const lat = location.latitude;
       const lng = location.longitude;
       const geohash = getGeohash(lat, lng);
 
       await addDoc(collection(db, 'foundPosts'), {
         name,
-        category,
+        category: category.toLowerCase(),
         description,
         location: new GeoPoint(lat, lng),
         geohash,
@@ -171,9 +178,9 @@ export default function CreatePostScreen({ navigation, route }) {
         status: 'available',
         createdAt: serverTimestamp(),
 
-        // Store lowercased fields for case-insensitive search
+        // lowercased fields
         name_lower: name.toLowerCase(),
-        category_lower: category.toLowerCase(),
+      
       });
 
       Alert.alert('Success', 'Post created successfully.');
@@ -193,89 +200,156 @@ export default function CreatePostScreen({ navigation, route }) {
     );
   }
 
+  // 3) Filter categories by user search
+  const filteredCategories = CATEGORIES.filter((cat) =>
+    cat.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const handleSelectCategory = (cat) => {
+    setCategory(cat);
+    setCategoryModalVisible(false);
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Create Found Post</Text>
-      {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
-      <TextInput
-        placeholder="Item Name"
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Category"
-        value={category}
-        onChangeText={setCategory}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Description"
-        value={description}
-        onChangeText={setDescription}
-        style={styles.input}
-      />
+    <>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Create Found Post</Text>
+        {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
 
-      <View style={styles.buttonRow}>
-        <Button title="Pick Image" onPress={pickImage} />
-        <Button title="Take Photo" onPress={takePhoto} />
-      </View>
-      {uploading && <Text>Uploading image(s)...</Text>}
+        {/* Item Name */}
+        <TextInput
+          placeholder="Item Name"
+          value={name}
+          onChangeText={setName}
+          style={styles.input}
+        />
 
-      {photos.length > 0 && (
-        <View style={styles.imagePreviewContainer}>
-          {photos.map((uri, index) => (
-            <Image key={index} source={{ uri }} style={styles.imagePreview} />
-          ))}
+        {/* 4) Category - Instead of a direct input, we do a button that opens a modal */}
+        <Text style={styles.label}>Category:</Text>
+        <TouchableOpacity
+          style={styles.categoryButton}
+          onPress={() => setCategoryModalVisible(true)}
+        >
+          <Text style={styles.categoryButtonText}>
+            {category || 'Tap to select category'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Description */}
+        <TextInput
+          placeholder="Description"
+          value={description}
+          onChangeText={setDescription}
+          style={styles.input}
+        />
+
+        <View style={styles.buttonRow}>
+          <Button title="Pick Image" onPress={pickImage} />
+          <Button title="Take Photo" onPress={takePhoto} />
         </View>
-      )}
+        {uploading && <Text>Uploading image(s)...</Text>}
 
-      <TextInput
-        placeholder="Additional Info"
-        value={additionalInfo}
-        onChangeText={setAdditionalInfo}
-        style={styles.input}
-      />
+        {photos.length > 0 && (
+          <View style={styles.imagePreviewContainer}>
+            {photos.map((uri, index) => (
+              <Image key={index} source={{ uri }} style={styles.imagePreview} />
+            ))}
+          </View>
+        )}
 
-      <TouchableOpacity
-        onPress={() =>
-          navigation.navigate('PickLocation', {
-            currentLocation: location,
-            formState: { name, category, description, additionalInfo, photos },
-          })
-        }
+        <TextInput
+          placeholder="Additional Info"
+          value={additionalInfo}
+          onChangeText={setAdditionalInfo}
+          style={styles.input}
+        />
+
+        {/* Location preview */}
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('PickLocation', {
+              currentLocation: location,
+              formState: { name, category, description, additionalInfo, photos },
+            })
+          }
+        >
+          <View style={styles.mapPreview}>
+            <MapView
+              style={styles.map}
+              pointerEvents="none"
+              provider={Platform.OS === 'android' ? 'google' : undefined}
+              initialRegion={{
+                latitude: location.latitude,
+                longitude: location.longitude,
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005,
+              }}
+            >
+              <Marker coordinate={location} />
+            </MapView>
+          </View>
+        </TouchableOpacity>
+        <Text style={styles.locationText}>
+          Current Location:{' '}
+          {location ? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}` : 'Not available'}
+        </Text>
+
+        <Button title="Create Post" onPress={handleCreatePost} />
+      </ScrollView>
+
+      {/* 5) Category Modal with Searchable List */}
+      <Modal
+        visible={categoryModalVisible}
+        animationType="slide"
+        onRequestClose={() => setCategoryModalVisible(false)}
       >
-        <View style={styles.mapPreview}>
-          <MapView
-            style={styles.map}
-            pointerEvents="none" // Disable interaction for preview
-            provider={Platform.OS === 'android' ? 'google' : undefined}
-            initialRegion={{
-              latitude: location.latitude,
-              longitude: location.longitude,
-              latitudeDelta: 0.005,
-              longitudeDelta: 0.005,
-            }}
-          >
-            <Marker coordinate={location} />
-          </MapView>
-        </View>
-      </TouchableOpacity>
-      <Text style={styles.locationText}>
-        Current Location:{' '}
-        {location ? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}` : 'Not available'}
-      </Text>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Select a Category</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search categories..."
+            value={categorySearch}
+            onChangeText={setCategorySearch}
+          />
 
-      <Button title="Create Post" onPress={handleCreatePost} />
-    </ScrollView>
+          {/* FlatList of matching categories */}
+          <FlatList
+            data={filteredCategories}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.categoryItem}
+                onPress={() => handleSelectCategory(item)}
+              >
+                <Text style={styles.categoryItemText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <Text style={{ textAlign: 'center', marginTop: 20 }}>
+                No matching categories found.
+              </Text>
+            }
+          />
+
+          <Button
+            title="Close"
+            onPress={() => setCategoryModalVisible(false)}
+          />
+        </View>
+      </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 20, justifyContent: 'center' },
+  container: { flexGrow: 1, padding: 20 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: 'gray', padding: 10, marginBottom: 15 },
+  label: { fontWeight: 'bold', marginBottom: 5, marginTop: 10 },
+  input: {
+    borderWidth: 1, borderColor: 'gray', padding: 10,
+    marginBottom: 15, borderRadius: 4,
+  },
   error: { color: 'red', textAlign: 'center', marginBottom: 15 },
   buttonRow: {
     flexDirection: 'row',
@@ -289,12 +363,40 @@ const styles = StyleSheet.create({
   },
   imagePreview: { width: 100, height: 100, marginRight: 10, marginBottom: 10 },
   mapPreview: {
-    width: '100%',
-    height: 150,
-    borderWidth: 1,
-    borderColor: 'gray',
-    marginBottom: 15,
+    width: '100%', height: 150,
+    borderWidth: 1, borderColor: 'gray',
+    marginBottom: 15, borderRadius: 4,
   },
   map: { width: '100%', height: '100%' },
   locationText: { marginTop: 20, textAlign: 'center', fontStyle: 'italic' },
+
+  categoryButton: {
+    borderWidth: 1, borderColor: 'gray',
+    padding: 12, borderRadius: 4,
+    marginBottom: 15,
+  },
+  categoryButtonText: {
+    color: '#333',
+  },
+
+  // Modal
+  modalContainer: {
+    flex: 1, padding: 20,
+    backgroundColor: '#fff',
+  },
+  modalTitle: {
+    fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 10,
+  },
+  searchInput: {
+    borderWidth: 1, borderColor: 'gray',
+    borderRadius: 4, padding: 10,
+    marginBottom: 15,
+  },
+  categoryItem: {
+    padding: 12,
+    borderBottomWidth: 1, borderBottomColor: '#ccc',
+  },
+  categoryItemText: {
+    fontSize: 16,
+  },
 });
