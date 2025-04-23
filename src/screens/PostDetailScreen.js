@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
-  Button,
   Image,
   ScrollView,
   Alert,
@@ -14,30 +13,48 @@ import {
   Dimensions,
   KeyboardAvoidingView,
 } from 'react-native';
-import { doc, getDoc } from 'firebase/firestore';
 import MapView, { Circle } from 'react-native-maps';
+import { doc, getDoc } from 'firebase/firestore';
+
 import { db } from '../config/firebaseConfig';
 import { sendRequest } from '../utils/requestUtils';
 import { AuthContext } from '../contexts/AuthContext';
 
-// 1) IMPORT the translation helpers:
+// For i18n
+import { useTranslation } from 'react-i18next';
+
+// For location approximation & translation
 import { getLanguagePreference } from '../utils/languageStorage';
 import { translateText } from '../utils/translateUtils';
 
+// Screen sizing
+const screenWidth = Dimensions.get('window').width;
+
 export default function PostDetailScreen({ route, navigation }) {
   const { postId } = route.params;
-  const [post, setPost] = useState(null);
-  const [requestMessage, setRequestMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [approxRegion, setApproxRegion] = useState(null);
   const { user } = useContext(AuthContext);
 
-  // 2) State for translation:
-  const [translatedDescription, setTranslatedDescription] = useState(null);
+  // Post data
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Request message
+  const [requestMessage, setRequestMessage] = useState('');
+
+  // Approx location
+  const [approxRegion, setApproxRegion] = useState(null);
+
+  // For translation
   const [preferredLanguage, setPreferredLanguage] = useState('en');
+  const [translatedDescription, setTranslatedDescription] = useState(null);
   const [translating, setTranslating] = useState(false);
 
-  // Fetch user’s language preference
+  const { t } = useTranslation(); // i18n hook
+
+  // Photos showcase
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  // Load user’s language preference
   useEffect(() => {
     (async () => {
       const lang = await getLanguagePreference();
@@ -45,9 +62,10 @@ export default function PostDetailScreen({ route, navigation }) {
     })();
   }, []);
 
-  // Compute approximate location only once after the post is loaded.
+  // Helper: approximate location
   const getApproximateLocation = (loc) => {
-    const offset = (Math.random() - 0.5) * 0.002; // ±0.001 approx
+    // ±0.0015 ~ 150m offset
+    const offset = (Math.random() - 0.5) * 0.003;
     return {
       latitude: loc.latitude + offset,
       longitude: loc.longitude + offset,
@@ -56,6 +74,7 @@ export default function PostDetailScreen({ route, navigation }) {
     };
   };
 
+  // Fetch post from Firestore
   useEffect(() => {
     async function fetchPost() {
       try {
@@ -64,11 +83,12 @@ export default function PostDetailScreen({ route, navigation }) {
         if (docSnap.exists()) {
           const postData = { id: docSnap.id, ...docSnap.data() };
           setPost(postData);
+          // Approx location
           if (postData.location) {
             setApproxRegion(getApproximateLocation(postData.location));
           }
         } else {
-          Alert.alert('Error', 'Post not found.');
+          Alert.alert('Error', t('postDetail.postNotFound'));
           navigation.goBack();
         }
       } catch (error) {
@@ -79,12 +99,13 @@ export default function PostDetailScreen({ route, navigation }) {
       }
     }
     fetchPost();
-  }, [postId, navigation]);
+  }, [postId, navigation, t]);
 
+  // Send request to the post’s creator
   const handleSendRequest = async () => {
     if (!post) return;
     if (!requestMessage.trim()) {
-      Alert.alert('Validation', 'Please enter a message for your request.');
+      Alert.alert('Validation', t('postDetail.emptyMessageAlert'));
       return;
     }
 
@@ -97,14 +118,14 @@ export default function PostDetailScreen({ route, navigation }) {
 
     try {
       await sendRequest(requestData);
-      Alert.alert('Success', 'Your request has been sent.');
+      Alert.alert('Success', t('postDetail.successRequest'));
       setRequestMessage('');
     } catch (error) {
       Alert.alert('Error', error.message);
     }
   };
 
-  // 3) Handle translation
+  // Translate the post's description
   const handleTranslateDescription = async () => {
     if (!post || !post.description) return;
     try {
@@ -113,34 +134,42 @@ export default function PostDetailScreen({ route, navigation }) {
       if (translated) {
         setTranslatedDescription(translated);
       } else {
-        Alert.alert('Translation Error', 'Unable to translate text.');
+        Alert.alert(
+          t('postDetail.translationErrorTitle'),
+          t('postDetail.translationError')
+        );
       }
     } catch (error) {
       console.error('Translation error:', error);
-      Alert.alert('Translation Error', 'An error occurred while translating.');
+      Alert.alert(
+        t('postDetail.translationErrorTitle'),
+        t('postDetail.translationError')
+      );
     } finally {
       setTranslating(false);
     }
   };
 
+  // If still loading
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
-        <Text>Loading post...</Text>
+        <Text>{t('postDetail.loadingPost')}</Text>
       </View>
     );
   }
 
+  // If no post
   if (!post) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Post not found.</Text>
+        <Text>{t('postDetail.postNotFound')}</Text>
       </View>
     );
   }
 
-  // Use the stored approximate region (if available)
+  // Region for the map
   const region = approxRegion || {
     latitude: post.location.latitude,
     longitude: post.location.longitude,
@@ -148,41 +177,109 @@ export default function PostDetailScreen({ route, navigation }) {
     longitudeDelta: 0.01,
   };
 
+  // Photo swipe handler
+  const handlePhotoScroll = (e) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / screenWidth);
+    setCurrentPhotoIndex(index);
+  };
+
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: '#f9fafb' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>{post.name}</Text>
-        <Text style={styles.category}>Category: {post.category}</Text>
+        {/* PHOTOS SHOWCASE at top */}
+        {post.photos && post.photos.length > 0 ? (
+          <View style={styles.photosShowcaseContainer}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handlePhotoScroll}
+              scrollEventThrottle={16}
+              style={styles.showcaseScroll}
+            >
+              {post.photos.map((url, idx) => (
+                <Image
+                  key={idx}
+                  source={{ uri: url }}
+                  style={styles.showcaseImage}
+                />
+              ))}
+            </ScrollView>
 
-        {/* 4) Show either the original description or the translated version */}
-        <Text style={styles.description}>
-          {translatedDescription || post.description}
-        </Text>
-
-        {/* 5) "Translate" button if not yet translated */}
-        {!translatedDescription && (
-          <View style={{ marginVertical: 10 }}>
-            {translating ? (
-              <ActivityIndicator size="small" />
-            ) : (
-              <Button title="Translate" onPress={handleTranslateDescription} />
-            )}
+            {/* Dots indicator  */}
+            <View style={styles.dotsContainer}>
+              {post.photos.map((_, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    styles.dot,
+                    idx === currentPhotoIndex && styles.activeDot,
+                  ]}
+                />
+              ))}
+            </View>
           </View>
-        )}
+        ) : null}
 
-        <Text style={styles.location}>Approximate Location:</Text>
+        {/* NAME + CATEGORY */}
+        <View style={styles.nameCategoryContainer}>
+          <Text style={styles.title}>{post.name}</Text>
+          <Text style={styles.category}>
+            {t('postDetail.categoryLabel')}: {post.category}
+          </Text>
+        </View>
+
+        {/* Separator line */}
+        <View style={styles.separatorLine} />
+
+        {/* DESCRIPTION (with small Translate btn) */}
+        <View style={styles.descriptionContainer}>
+          <Text style={styles.descriptionLabel}>
+            {t('postDetail.descriptionLabel')}
+          </Text>
+          <Text style={styles.descriptionText}>
+            {translatedDescription || post.description}
+          </Text>
+
+          {/* Small button for translate */}
+          {!translatedDescription && (
+            <TouchableOpacity
+              style={styles.translateButton}
+              onPress={handleTranslateDescription}
+            >
+              {translating ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.translateButtonText}>
+                  {t('postDetail.translateButton')}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Separator line */}
+        <View style={styles.separatorLine} />
+
+        {/* MAP (with border) */}
+        <Text style={styles.locationLabel}>
+          {t('postDetail.locationLabel')}
+        </Text>
         <TouchableOpacity
-          onPress={() => navigation.navigate('FullMap', { location: post.location })}
+          style={styles.mapContainer}
+          onPress={() =>
+            navigation.navigate('FullMap', { location: post.location })
+          }
         >
           <MapView
             style={styles.mapPreview}
+            pointerEvents="none"
             provider={Platform.OS === 'android' ? 'google' : undefined}
             region={region}
-            pointerEvents="none" // disables interaction for preview
           >
             <Circle
               center={region}
@@ -193,35 +290,29 @@ export default function PostDetailScreen({ route, navigation }) {
           </MapView>
         </TouchableOpacity>
 
-        {post.photos && post.photos.length > 0 && (
-          <ScrollView horizontal style={styles.photosContainer}>
-            {post.photos.map((url, index) => (
-              <Image key={index} source={{ uri: url }} style={styles.photo} />
-            ))}
-          </ScrollView>
-        )}
+       
 
-        <Text style={styles.additionalInfo}>
-          Additional Info: {post.additionalInfo}
-        </Text>
-        <Text style={styles.status}>Status: {post.status}</Text>
-
+        {/* If not owner => Request form */}
         {user.uid !== post.creatorId ? (
           <View style={styles.requestContainer}>
-            <Text style={styles.requestTitle}>Send Request to Claim this Item</Text>
+            <Text style={styles.requestTitle}>{t('postDetail.requestTitle')}</Text>
             <TextInput
               style={styles.requestInput}
-              placeholder="Enter your message"
+              placeholder={t('postDetail.requestPlaceholder')}
               value={requestMessage}
               onChangeText={setRequestMessage}
               multiline
             />
-            <Button title="Send Request" onPress={handleSendRequest} />
+            <TouchableOpacity style={styles.sendRequestButton} onPress={handleSendRequest}>
+              <Text style={styles.sendRequestButtonText}>
+                {t('postDetail.sendRequestButton')}
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.requestContainer}>
-            <Text style={styles.requestTitle}>
-              You cannot send a request for your own post.
+            <Text style={styles.ownPostNote}>
+              {t('postDetail.ownPostNote')}
             </Text>
           </View>
         )}
@@ -231,35 +322,177 @@ export default function PostDetailScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 26, fontWeight: 'bold', marginBottom: 10 },
-  category: { fontSize: 16, fontStyle: 'italic', marginBottom: 5 },
-  description: { fontSize: 16, marginBottom: 10 },
-  location: { fontSize: 16, marginBottom: 5 },
-  mapPreview: {
-    width: Dimensions.get('window').width - 40,
-    height: 150,
-    borderRadius: 10,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  container: {
+    paddingBottom: 20,
+    backgroundColor: '#f9fafb',
+  },
+
+  // Photos Showcase
+  photosShowcaseContainer: {
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  showcaseScroll: {
+    width: Dimensions.get('window').width - 24, // a bit less than container width
+  },
+  showcaseImage: {
+    width: Dimensions.get('window').width - 24, // full width for paging
+    height: 300,
+    resizeMode: 'cover',
+  },
+  dotsContainer: {
+    position: 'absolute',
+    bottom: 10,
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#9ca3af',
+    marginHorizontal: 4,
+  },
+  activeDot: {
+    backgroundColor: '#0284c7',
+  },
+
+  // Name + Category
+  nameCategoryContainer: {
+    paddingHorizontal: 20,
     marginBottom: 10,
   },
-  photosContainer: { marginVertical: 10 },
-  photo: { width: 200, height: 200, marginRight: 10 },
-  additionalInfo: { fontSize: 16, marginBottom: 10 },
-  status: { fontSize: 16, marginBottom: 20 },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 5,
+    marginTop: 5,
+  },
+  category: {
+    fontSize: 16,
+    fontStyle: 'italic',
+    color: '#6b7280',
+  },
+
+  // Separator line 
+  separatorLine: {
+    height: 1,
+    backgroundColor: '#cbd5e1',
+    marginVertical: 20,
+    marginHorizontal: 20,
+  },
+
+  // Description
+  descriptionContainer: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  descriptionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#1f2937',
+  },
+  descriptionText: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#1f2937',
+    paddingRight: 10, // so text doesn't overlap the translate btn
+  },
+  translateButton: {
+    position: 'absolute',
+    bottom: -30,
+    right: 0,
+    backgroundColor: '#0284c7',
+    borderRadius: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    margin: 3,
+  },
+  translateButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // Map (with border)
+  locationLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginHorizontal: 20,
+    marginBottom: 8,
+    color: '#1f2937',
+  },
+  mapContainer: {
+    marginHorizontal: 23,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  mapPreview: {
+    width: Dimensions.get('window').width - 48,
+    height: 200,
+  },
+
+  // Status
+  status: {
+    fontSize: 16,
+    color: '#1f2937',
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+
+  // Request container
   requestContainer: {
     borderTopWidth: 1,
-    borderTopColor: '#ccc',
+    borderTopColor: '#cbd5e1',
     paddingTop: 20,
-    marginTop: 20,
+    marginHorizontal: 20,
   },
-  requestTitle: { fontSize: 18, marginBottom: 10 },
+  requestTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 10,
+  },
   requestInput: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 10,
-    minHeight: 60,
+    borderColor: '#cbd5e1',
+    borderRadius: 6,
+    backgroundColor: '#fff',
+    padding: 12,
+    minHeight: 80,
     textAlignVertical: 'top',
+    marginBottom: 10,
+  },
+  sendRequestButton: {
+    backgroundColor: '#0284c7',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  sendRequestButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  ownPostNote: {
+    fontSize: 16,
+    color: '#6b7280',
   },
 });

@@ -1,0 +1,107 @@
+{
+    "login": {
+      "title": "Login",
+      "emailPlaceholder": "Email",
+      "passwordPlaceholder": "Password",
+      "loginButton": "Login",
+      "signupLink": "Don't have an account? Sign Up",
+      "forgotPasswordLink": "Forgot your Password?"
+    },
+    "signup": {
+      "title": "Sign Up",
+      "namePlaceholder": "Name",
+      "emailPlaceholder": "Email",
+      "passwordPlaceholder": "Password",
+      "signupButton": "Sign Up",
+      "loginBackButton": "Login"
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "instructions": "Enter your email below",
+      "buttonText": "Send Reset Email",
+      "backButtonText": "Login"
+    },
+
+    "profile": {
+        "title": "Profile",
+        "nameLabel": "Name",
+        "requestsButton": "Requests",
+        "languageLabel": "Preferred Language",
+        "signOutButton": "Sign Out",
+        "loadingProfile": "Loading profile..."
+      },
+
+      "createPost": {
+    "title": "Publish a Found Post",
+    "itemNamePlaceholder": "Item Name",
+    "categoryLabel": "Category",
+    "categoryPlaceholder": "Tap to select category",
+    "descriptionPlaceholder": "Description",
+    "pickLocationLabel": "Where did you find this item?",
+    "pickLocationOverlay": "Press to pick location",
+    "addImageOptions": {
+      "title": "Add Photo",
+      "takePhoto": "Take Photo",
+      "chooseFromLibrary": "Choose from Library",
+      "cancel": "Cancel"
+    },
+    "createButton": "Publish",
+    "uploadingText": "Uploading image(s)...",
+    "successMessage": "Post created successfully",
+    "fillRequiredFields": "Please fill in all required fields and pick a location",
+    "uploadPhotos": "Upload Photos"
+  },
+  
+    "postDetail": {
+      "title": "Post Details",
+      "nameLabel": "Name",
+      "categoryLabel": "Category",
+      "locationLabel": "Approximate Location",
+      "descriptionLabel": "Description",
+      "translateButton": "Translate",
+      "translating": "Translating...",
+      "photosLabel": "Photos",
+      "statusLabel": "Status",
+      "additionalInfoLabel": "Additional Info",
+      "requestTitle": "Send Request to Claim this Item",
+      "requestPlaceholder": "Enter your message",
+      "sendRequestButton": "Send Request",
+      "ownPostNote": "You cannot send a request for your own post.",
+      "loadingPost": "Loading post...",
+      "postNotFound": "Post not found.",
+      "emptyMessageAlert": "Please enter a message for your request.",
+      "successRequest": "Your request has been sent.",
+      "translationError": "Unable to translate text.",
+      "translationErrorTitle": "Translation Error"
+      
+    },
+
+    "foundScreen": {
+    "title": "Your Posts",
+    "loading": "Loading...",
+    "noPosts": "No posts found.",
+    "createPost": "Create Post"
+  },
+  "lostScreen": {
+    "loading": "Loading...",
+    "searchPlaceholder": "Search item...",
+    "sliderLabel": "Radius: {{value}} km",
+    "searchButton": "Search",
+    "filters": "Filters",
+    "resultTitle": "Results",
+    "noResults": "No Results",
+    "searchError": "Something went wrong while searching.",
+    "categoryFilter": "Select Category Filter",
+    "dateFilter": "Show posts after date:",
+    "close": "Close"
+  },
+  "lostFoundItem": {
+    "categoryLabel": "Category:",
+    "dateFoundLabel": "Date Found:",
+    "statusLabel": "Status:"
+  }
+    
+  
+  
+  }
+  

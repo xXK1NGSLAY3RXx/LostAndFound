@@ -1,0 +1,101 @@
+{
+    "login": {
+      "title": "Iniciar sesión",
+      "emailPlaceholder": "Correo electrónico",
+      "passwordPlaceholder": "Contraseña",
+      "loginButton": "Acceder",
+      "signupLink": "¿No tienes cuenta? Regístrate",
+      "forgotPasswordLink": "¿Olvidaste tu contraseña?"
+    },
+    "signup": {
+      "title": "Crear cuenta",
+      "namePlaceholder": "Nombre",
+      "emailPlaceholder": "Correo electrónico",
+      "passwordPlaceholder": "Contraseña",
+      "signupButton": "Registrarse",
+      "loginBackButton": "Iniciar sesión"
+    },
+    "forgotPassword": {
+      "title": "Restablecer contraseña",
+      "instructions": "Ingresa tu correo abajo",
+      "buttonText": "Enviar enlace",
+      "backButtonText": "Iniciar sesión"
+    },
+
+    "profile": {
+    "title": "Perfil",
+    "nameLabel": "Nombre",
+    "requestsButton": "Solicitudes",
+    "languageLabel": "Idioma preferido",
+    "signOutButton": "Cerrar sesión",
+    "loadingProfile": "Cargando perfil..."
+  },
+  "createPost": {
+    "title": "Publicar objeto encontrado",
+    "itemNamePlaceholder": "Nombre del objeto",
+    "categoryLabel": "Categoría",
+    "categoryPlaceholder": "Toca para seleccionar categoría",
+    "descriptionPlaceholder": "Descripción",
+    "pickLocationLabel": "¿Dónde encontraste este objeto?",
+    "pickLocationOverlay": "Toca para seleccionar ubicación",
+    "addImageOptions": {
+      "title": "Agregar foto",
+      "takePhoto": "Tomar foto",
+      "chooseFromLibrary": "Elegir de la galería",
+      "cancel": "Cancelar"
+    },
+    "createButton": "Crear publicación",
+    "uploadingText": "Subiendo imagen(es)...",
+    "successMessage": "Publicación creada con éxito",
+    "fillRequiredFields": "Por favor, completa todos los campos requeridos y elige una ubicación",
+    "uploadPhotos": "Subir Fotos"
+  },
+
+  "postDetail": {
+    "title": "Detalles de la Publicación",
+    "nameLabel": "Nombre",
+    "categoryLabel": "Categoría",
+    "locationLabel": "Ubicación Aproximada",
+    "descriptionLabel": "Descripción",
+    "translateButton": "Traducir",
+    "translating": "Traduciendo...",
+    "photosLabel": "Fotos",
+    "statusLabel": "Estado",
+    "additionalInfoLabel": "Información Adicional",
+    "requestTitle": "Enviar Solicitud para Reclamar este Objeto",
+    "requestPlaceholder": "Ingresa tu mensaje",
+    "sendRequestButton": "Enviar Solicitud",
+    "ownPostNote": "No puedes enviar una solicitud para tu propia publicación.",
+    "loadingPost": "Cargando publicación...",
+    "postNotFound": "Publicación no encontrada.",
+    "emptyMessageAlert": "Por favor, ingresa un mensaje para tu solicitud.",
+    "successRequest": "Tu solicitud ha sido enviada.",
+    "translationError": "No se pudo traducir el texto.",
+    "translationErrorTitle": "Error de Traducción"
+  },
+
+  "foundScreen": {
+    "loading": "Cargando...",
+    "noPosts": "No se encontraron publicaciones.",
+    "createPost": "Crear publicación"
+  },
+  "lostScreen": {
+    "loading": "Cargando...",
+    "searchPlaceholder": "Buscar objeto...",
+    "sliderLabel": "Radio: {{value}} km",
+    "searchButton": "Buscar",
+    "filters": "Filtros",
+    "resultTitle": "Resultados",
+    "noResults": "Sin resultados",
+    "searchError": "Algo salió mal al buscar.",
+    "categoryFilter": "Seleccionar categoría",
+    "dateFilter": "Mostrar publicaciones después de:",
+    "close": "Cerrar"
+  },
+  "lostFoundItem": {
+    "categoryLabel": "Categoría:",
+    "dateFoundLabel": "Fecha encontrada:",
+    "statusLabel": "Estado:"
+  }
+  }
+  

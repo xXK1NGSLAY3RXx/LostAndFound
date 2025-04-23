@@ -1,3 +1,5 @@
+// src/screens/LoginScreen.jsx
+
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -9,9 +11,17 @@ import {
   StyleSheet,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+
+// Firebase
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
+
+// Language preference utilities (optional)
 import { saveLanguagePreference, getLanguagePreference } from '../utils/languageStorage';
+
+// React-i18next
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';  // so we can call i18n.changeLanguage
 
 const stylesConstants = {
   primary: '#0284c7',
@@ -29,20 +39,16 @@ export default function LoginScreen({ navigation }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [isDropdownOpen, setDropdownOpen] = useState(false);
 
-  useEffect(() => {
-    async function loadLanguage() {
-      const lang = await getLanguagePreference();
-      if (lang) {
-        setSelectedLanguage(lang);
-      }
-    }
-    loadLanguage();
-  }, []);
+  // Pull in the translation function
+  const { t } = useTranslation();
 
+
+
+  // Handle user login
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Save the selected language preference after successful login
+      // Save language preference after a successful login
       await saveLanguagePreference(selectedLanguage);
     } catch (error) {
       setErrorMsg(error.message);
@@ -50,12 +56,15 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  // Toggle the dropdown
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
   };
 
+  // When user picks a language
   const handleLanguageSelect = (lang) => {
     setSelectedLanguage(lang);
+    i18n.changeLanguage(lang); 
     setDropdownOpen(false);
   };
 
@@ -70,16 +79,16 @@ export default function LoginScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* When dropdown is open, show a full-screen overlay */}
+      {/* Dropdown overlay when open */}
       {isDropdownOpen && (
         <TouchableOpacity
           style={styles.overlay}
           activeOpacity={1}
           onPress={() => setDropdownOpen(false)}
         >
-          {/* Stop propagation inside the dropdown */}
           <TouchableWithoutFeedback>
             <View style={styles.dropdown}>
+            
               <TouchableOpacity
                 style={styles.dropdownItem}
                 onPress={() => handleLanguageSelect('en')}
@@ -90,7 +99,7 @@ export default function LoginScreen({ navigation }) {
                 style={styles.dropdownItem}
                 onPress={() => handleLanguageSelect('es')}
               >
-                <Text style={styles.dropdownText}>Espanish</Text>
+                <Text style={styles.dropdownText}>Spanish</Text>
               </TouchableOpacity>
             </View>
           </TouchableWithoutFeedback>
@@ -107,11 +116,15 @@ export default function LoginScreen({ navigation }) {
       {/* App Name */}
       <Text style={styles.appName}>Lost & Found</Text>
 
-      <Text style={styles.title}>Login</Text>
+      {/* Title */}
+      <Text style={styles.title}>{t('login.title')}</Text>
+
+      {/* Error message */}
       {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
 
+      {/* Email input */}
       <TextInput
-        placeholder="Email"
+        placeholder={t('login.emailPlaceholder')}
         value={email}
         onChangeText={setEmail}
         style={styles.input}
@@ -119,31 +132,34 @@ export default function LoginScreen({ navigation }) {
         autoCapitalize="none"
       />
 
+      {/* Password input */}
       <TextInput
-        placeholder="Password"
+        placeholder={t('login.passwordPlaceholder')}
         value={password}
         onChangeText={setPassword}
         style={styles.input}
         secureTextEntry
       />
 
+      {/* Login Button */}
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginButtonText}>Login</Text>
+        <Text style={styles.loginButtonText}>{t('login.loginButton')}</Text>
       </TouchableOpacity>
 
+      {/* Sign Up link */}
       <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-        <Text style={styles.link}>Don't have an account? Sign Up</Text>
+        <Text style={styles.link}>{t('login.signupLink')}</Text>
       </TouchableOpacity>
 
+      {/* Forgot Password link */}
       <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-        <Text style={styles.link}>Forgot your Password?</Text>
+        <Text style={styles.link}>{t('login.forgotPasswordLink')}</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  /* Main container */
   container: {
     flex: 1,
     backgroundColor: stylesConstants.background,
@@ -151,10 +167,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  /* Top-right language container */
   languageContainer: {
     position: 'absolute',
-    top: 50,  // Adjust based on safe area
+    top: 50,
     right: 20,
   },
   languageText: {
@@ -162,28 +177,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: stylesConstants.textDark,
   },
-  /* Overlay for outside-click detection */
   overlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    // no backgroundColor or transparent background so the UI is visible behind
-    // but if you want to dim the background, you could do:
-    // backgroundColor: 'rgba(0,0,0,0.2)'
   },
-  /* Dropdown area */
   dropdown: {
     position: 'absolute',
-    top: 70,    // near the languageContainer
+    top: 70,
     right: 20,
     backgroundColor: '#fff',
     borderColor: '#cbd5e1',
     borderWidth: 1,
     borderRadius: 6,
     width: 90,
-    zIndex: 999, // ensure it's on top
+    zIndex: 999,
   },
   dropdownItem: {
     paddingHorizontal: 12,
@@ -193,7 +203,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: stylesConstants.textDark,
   },
-  /* App icon & name */
   appIcon: {
     marginBottom: 10,
   },
@@ -203,7 +212,6 @@ const styles = StyleSheet.create({
     color: stylesConstants.primary,
     marginBottom: 30,
   },
-  /* Login Title, Error, and Inputs */
   title: {
     fontSize: 24,
     color: stylesConstants.textDark,
@@ -225,7 +233,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#fff',
   },
-  /* Login Button */
   loginButton: {
     width: '100%',
     backgroundColor: stylesConstants.primary,

@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+// src/screens/SignupScreen.jsx
+
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,11 +12,19 @@ import {
   StyleSheet,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+
+// Firebase
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebaseConfig';
-import { saveLanguagePreference, getLanguagePreference } from '../utils/languageStorage';
 
+// Language preference utilities (optional)
+import { saveLanguagePreference } from '../utils/languageStorage';
+
+// React-i18next
+import { useTranslation } from 'react-i18next';
+
+// Local color palette
 const stylesConstants = {
   primary: '#0284c7',
   secondary: '#06b6d4',
@@ -30,25 +40,12 @@ export default function SignupScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Language selection & dropdown states
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
+  // Translation hook
+  const { t } = useTranslation();
 
-  // Load saved language preference
-  useEffect(() => {
-    async function loadLanguage() {
-      const lang = await getLanguagePreference();
-      if (lang) {
-        setSelectedLanguage(lang);
-      }
-    }
-    loadLanguage();
-  }, []);
-
-  // Sign Up logic
-  const handleSignUp = async () => {
+  async function handleSignUp() {
     if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      Alert.alert('Error', t('common.fillAllFields') || 'Please fill in all fields.');
       return;
     }
     try {
@@ -64,70 +61,32 @@ export default function SignupScreen({ navigation }) {
         createdAt: serverTimestamp(),
       });
 
-      // Save language preference
-      await saveLanguagePreference(selectedLanguage);
+      // Save the language preference if needed
+      // await saveLanguagePreference(...); 
+      
 
-      // After successful signup, you might want to navigate or goBack. 
-      // For example: navigation.replace('Login') 
-      // but if you'd prefer staying on the sign-up screen, remove that.
+      // After successful sign-up, navigate to Login
+      navigation.replace('Login');
     } catch (error) {
       setErrorMsg(error.message);
       Alert.alert('Error', error.message);
     }
-  };
+  }
 
-  // Dropdown toggles
-  const toggleDropdown = () => {
-    setDropdownOpen(!isDropdownOpen);
-  };
-
-  const handleLanguageSelect = (lang) => {
-    setSelectedLanguage(lang);
-    setDropdownOpen(false);
-  };
-
-  // Actual rendering
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
-        {/* Back button that goes back in the stack */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        {/* Back button (goBack) */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="arrow-back" size={24} color={stylesConstants.textDark} />
-          <Text style={styles.backButtonText}>Login</Text>
+          {/* Translated text for the back button */}
+          <Text style={styles.backButtonText}>
+            {t('signup.loginBackButton')}
+          </Text>
         </TouchableOpacity>
-
-        {/* Language selector at top-right */}
-        <View style={styles.languageContainer}>
-          <TouchableOpacity onPress={toggleDropdown}>
-            <Text style={styles.languageText}>{selectedLanguage.toUpperCase()} ▼</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Overlay when dropdown is open */}
-        {isDropdownOpen && (
-          <TouchableOpacity
-            style={styles.overlay}
-            activeOpacity={1}
-            onPress={() => setDropdownOpen(false)}
-          >
-            <TouchableWithoutFeedback>
-              <View style={styles.dropdown}>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => handleLanguageSelect('en')}
-                >
-                  <Text style={styles.dropdownText}>En</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => handleLanguageSelect('es')}
-                >
-                  <Text style={styles.dropdownText}>Es</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
-          </TouchableOpacity>
-        )}
 
         {/* App Icon */}
         <Ionicons
@@ -139,18 +98,19 @@ export default function SignupScreen({ navigation }) {
         {/* App Name */}
         <Text style={styles.appName}>Lost & Found</Text>
 
-        <Text style={styles.title}>Sign Up</Text>
-
+        {/* Title from translation files */}
+        <Text style={styles.title}>{t('signup.title')}</Text>
         {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
 
+        {/* Input fields with placeholders from i18n */}
         <TextInput
-          placeholder="Name"
+          placeholder={t('signup.namePlaceholder')}
           value={name}
           onChangeText={setName}
           style={styles.input}
         />
         <TextInput
-          placeholder="Email"
+          placeholder={t('signup.emailPlaceholder')}
           value={email}
           onChangeText={setEmail}
           style={styles.input}
@@ -158,26 +118,25 @@ export default function SignupScreen({ navigation }) {
           autoCapitalize="none"
         />
         <TextInput
-          placeholder="Password"
+          placeholder={t('signup.passwordPlaceholder')}
           value={password}
           onChangeText={setPassword}
           style={styles.input}
           secureTextEntry
         />
 
-        {/* Sign Up Button */}
+        {/* Sign Up Button with translated text */}
         <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-          <Text style={styles.signUpButtonText}>Sign Up</Text>
+          <Text style={styles.signUpButtonText}>
+            {t('signup.signupButton')}
+          </Text>
         </TouchableOpacity>
-
-        {/* The text link to go to Login has been removed */}
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  // Main container
   container: {
     flex: 1,
     backgroundColor: stylesConstants.background,
@@ -185,10 +144,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Back Button
   backButton: {
     position: 'absolute',
-    top: 50, // adjust based on your safe area or status bar
+    top: 50, 
     left: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -199,44 +157,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: stylesConstants.textDark,
   },
-  // Language Dropdown
-  languageContainer: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-  },
-  languageText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: stylesConstants.textDark,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 70,
-    right: 20,
-    backgroundColor: '#fff',
-    borderColor: '#cbd5e1',
-    borderWidth: 1,
-    borderRadius: 6,
-    width: 80,
-    zIndex: 999,
-  },
-  dropdownItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  dropdownText: {
-    fontSize: 14,
-    color: stylesConstants.textDark,
-  },
-  // App icon & name
   appIcon: {
     marginBottom: 10,
   },
@@ -246,7 +166,6 @@ const styles = StyleSheet.create({
     color: stylesConstants.primary,
     marginBottom: 30,
   },
-  // Title & error
   title: {
     fontSize: 24,
     color: stylesConstants.textDark,
@@ -259,7 +178,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 15,
   },
-  // Text inputs
   input: {
     width: '100%',
     borderWidth: 1,
@@ -269,7 +187,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#fff',
   },
-  // Sign Up Button
   signUpButton: {
     width: '100%',
     backgroundColor: stylesConstants.primary,

@@ -32,6 +32,8 @@ import LostFoundItem from '../components/LostFoundItem';
 // 1) Import the large categories list
 import { CATEGORIES } from '../constants/categoriesList';
 
+import { useTranslation } from 'react-i18next';
+
 export default function LostScreen() {
   // ---------------------------
   // LOCATION & MAP
@@ -75,6 +77,8 @@ export default function LostScreen() {
     }
   };
 
+  const { t } = useTranslation(); // i18n translations
+
   // ---------------------------
   // SEARCH & FILTER
   // ---------------------------
@@ -103,7 +107,7 @@ export default function LostScreen() {
 
   // BOTTOM SHEET
   const bottomSheetRef = useRef(null);
-  const snapPoints = ['27%', '80%']; // min or max
+  const snapPoints = ['27%', '80%']; // 27% for collapsed, 80% for expanded
 
   // ---------------------------
   // CATEGORY MODAL LOGIC
@@ -114,8 +118,7 @@ export default function LostScreen() {
   );
 
   const handleSelectCategory = (cat) => {
-    // We store the user-selected category in upper-case or title-case (your choice).
-    // For demonstration, let's keep it as-is from the CATEGORIES array:
+    
     setCategoryFilter(cat);
     setCategoryModalVisible(false);
   };
@@ -204,20 +207,18 @@ export default function LostScreen() {
       bottomSheetRef.current?.snapToIndex(1);
     } catch (err) {
       console.error('Search error:', err);
-      Alert.alert('Error', 'Something went wrong while searching.');
+      Alert.alert('Error', t('lostScreen.searchError'));
     }
 
     setLoading(false);
   };
 
-  // ---------------------------
-  // RENDER
-  // ---------------------------
+
   if (!mapRegion) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
-        <Text>Loading location...</Text>
+        <Text>{t('lostScreen.loading')}</Text>
       </View>
     );
   }
@@ -250,7 +251,7 @@ export default function LostScreen() {
         <View style={styles.topBar}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search item..."
+            placeholder={t('lostScreen.searchPlaceholder')}
             value={searchTerm}
             onChangeText={setSearchTerm}
           />
@@ -266,7 +267,9 @@ export default function LostScreen() {
         >
           <BottomSheetScrollView contentContainerStyle={styles.sheetContent}>
             {/* RADIUS SLIDER */}
-            <Text style={styles.sliderLabel}>Radius: {radius} km</Text>
+            <Text style={styles.sliderLabel}>
+              {t('lostScreen.sliderLabel', { value: radius })}
+            </Text>
             <Slider
               style={styles.sliderStyle}
               minimumValue={1}
@@ -282,7 +285,7 @@ export default function LostScreen() {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.searchBtnText}>Search</Text>
+                  <Text style={styles.searchBtnText}>{t('lostScreen.searchButton')}</Text>
                 )}
               </TouchableOpacity>
 
@@ -290,7 +293,7 @@ export default function LostScreen() {
                 style={styles.filterBtn}
                 onPress={() => setShowFilters((prev) => !prev)}
               >
-                <Text style={styles.filterBtnText}>Filters</Text>
+                <Text style={styles.filterBtnText}>{t('lostScreen.filters')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -298,7 +301,7 @@ export default function LostScreen() {
             {showFilters && (
               <View style={styles.filterContainer}>
                 <Text style={styles.filterLabel}>Category:</Text>
-                {/* Instead of a direct TextInput, let's do a button that opens a modal */}
+               
                 <TouchableOpacity
                   style={styles.categoryButton}
                   onPress={() => setCategoryModalVisible(true)}
@@ -308,7 +311,7 @@ export default function LostScreen() {
                   </Text>
                 </TouchableOpacity>
 
-                <Text style={styles.filterLabel}>Show posts after date:</Text>
+                <Text style={styles.filterLabel}>{t('lostScreen.dateFilter')}</Text>
                 <DateTimePicker
                   value={dateFilter || new Date()}
                   mode="date"
@@ -320,9 +323,9 @@ export default function LostScreen() {
             )}
 
             {/* RESULTS */}
-            <Text style={styles.resultTitle}>Results</Text>
+            <Text style={styles.resultTitle}>{t('lostScreen.resultTitle')}</Text>
             {searchResults.length === 0 && !loading ? (
-              <Text>No Results</Text>
+              <Text>{t('lostScreen.noResults')}</Text>
             ) : (
               searchResults.map((item) => (
                 <View key={item.id} style={styles.resultItemContainer}>
@@ -347,7 +350,7 @@ export default function LostScreen() {
         onRequestClose={() => setCategoryModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Select Category Filter</Text>
+          <Text style={styles.modalTitle}>{t('lostScreen.categoryFilter')}</Text>
           <TextInput
             style={styles.searchInput}
             placeholder="Search categories..."
@@ -379,7 +382,7 @@ export default function LostScreen() {
             style={styles.closeModalBtn}
             onPress={() => setCategoryModalVisible(false)}
           >
-            <Text style={{ color: '#fff' }}>Close</Text>
+            <Text style={{ color: '#fff' }}>{t('lostScreen.close')}</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -404,6 +407,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderColor: '#ccc',
+    marginTop: 20,
+    marginHorizontal: 10,
+    borderRadius: 8,
   },
   searchInput: {
     backgroundColor: '#f2f2f2',
@@ -425,7 +431,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   searchBtn: {
-    backgroundColor: 'blue',
+    backgroundColor: '#0284c7',
     padding: 12, borderRadius: 8,
     alignItems: 'center',
     marginRight: 10, flex: 1,

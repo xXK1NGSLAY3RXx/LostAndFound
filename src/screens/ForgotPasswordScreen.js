@@ -1,3 +1,5 @@
+// src/screens/ForgotPasswordScreen.jsx
+
 import React, { useState } from 'react';
 import {
   View,
@@ -12,6 +14,9 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
+
+// react-i18next
+import { useTranslation } from 'react-i18next';
 
 const stylesConstants = {
   primary: '#0284c7',
@@ -28,52 +33,64 @@ export default function ForgotPasswordScreen({ navigation }) {
   const [message, setMessage] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Translation hook
+  const { t } = useTranslation();
+
   // Handle password reset request
-  const handlePasswordReset = async () => {
+  async function handlePasswordReset() {
+    if (!email) {
+      Alert.alert('Error', t('common.fillAllFields') || 'Please fill in all fields.');
+      return;
+    }
     try {
       await sendPasswordResetEmail(auth, email);
-      setMessage('Password reset email sent. Check your inbox.');
+      setMessage(t('forgotPassword.successMessage') || 'Password reset email sent. Check your inbox.');
       setErrorMsg('');
     } catch (error) {
       setErrorMsg(error.message);
       setMessage('');
     }
-  };
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
-        {/* Back Button to Login (top-left) */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        {/* Back Button to go back */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="arrow-back" size={24} color={stylesConstants.textDark} />
-          <Text style={styles.backButtonText}>Login</Text>
+          <Text style={styles.backButtonText}>
+            {t('forgotPassword.backButtonText')}
+          </Text>
         </TouchableOpacity>
 
-        {/* (Optional) App Icon & Name */}
-        <Ionicons
-          name="search-circle"
-          size={80}
-          color={stylesConstants.primary}
-          style={styles.appIcon}
-        />
-        <Text style={styles.appName}>Lost & Found</Text>
 
-        <Text style={styles.title}>Reset Password</Text>
+        {/* Title */}
+        <Text style={styles.title}>
+          {t('forgotPassword.title')}
+        </Text>
 
+        {/* Success & Error Messages */}
         {message ? <Text style={styles.message}>{message}</Text> : null}
         {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
 
+        {/* Email Input */}
         <TextInput
           style={styles.input}
-          placeholder="Enter your email"
+          placeholder={t('forgotPassword.instructions') || 'Enter your email'}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
 
+        {/* Reset Button */}
         <TouchableOpacity style={styles.resetButton} onPress={handlePasswordReset}>
-          <Text style={styles.resetButtonText}>Send Reset Email</Text>
+          <Text style={styles.resetButtonText}>
+            {t('forgotPassword.buttonText')}
+          </Text>
         </TouchableOpacity>
       </View>
     </TouchableWithoutFeedback>
@@ -91,7 +108,7 @@ const styles = StyleSheet.create({
   /* Back Button */
   backButton: {
     position: 'absolute',
-    top: 50,  // Adjust for status bar on iOS if needed
+    top: 50,  
     left: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -125,11 +142,13 @@ const styles = StyleSheet.create({
     color: stylesConstants.error,
     marginBottom: 15,
     textAlign: 'center',
+    paddingHorizontal: 10,
   },
   message: {
     color: stylesConstants.success,
     marginBottom: 15,
     textAlign: 'center',
+    paddingHorizontal: 10,
   },
   /* Text Input */
   input: {
